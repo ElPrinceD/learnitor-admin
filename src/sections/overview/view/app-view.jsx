@@ -1,8 +1,13 @@
 import { faker } from '@faker-js/faker';
+import { useState, useEffect, useContext } from 'react';
 
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Unstable_Grid2';
 import Typography from '@mui/material/Typography';
+
+import apiClient from 'src/api-calls/api-client';
+import AuthContext from 'src/context/auth-context';
+import { getCourses } from 'src/api-calls/course-api';
 
 import Iconify from 'src/components/iconify';
 
@@ -16,20 +21,60 @@ import AppTrafficBySite from '../app-traffic-by-site';
 import AppCurrentSubject from '../app-current-subject';
 import AppConversionRates from '../app-conversion-rates';
 
+
 // ----------------------------------------------------------------------
 
 export default function AppView() {
+  const { user, token } = useContext(AuthContext);
+  const [userCount, setUserCount] = useState(0); // State to store user count
+  const [courses, setCourses] = useState([]);
+
+  useEffect(() => {
+    const fetchUserCount = async () => {
+      try {
+        const response = await apiClient.get('/api/user-counts',{
+        headers: {
+          Authorization: `Token ${token}`,
+        },
+      });
+        setUserCount(response.data.non_admin_count); 
+          console.log("ksjssj",response)
+
+      } catch (error) {
+        console.error('User count failed', error);
+      }
+    };
+
+    fetchUserCount(); // Fetch the user count when the component mounts
+  }, [token]);
+
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const data = await getCourses(token);
+        setCourses(data);
+      } catch (err) {
+        console.error('Failed to load courses', courses);
+      } 
+    };
+
+    if (token) {
+      fetchCourses();
+    }
+  }, [courses, token]);
+
+
   return (
     <Container maxWidth="xl">
       <Typography variant="h4" sx={{ mb: 5 }}>
-        Hi, Welcome back 👋
+        {user.first_name}, Welcome back 👋
       </Typography>
 
       <Grid container spacing={3}>
         <Grid xs={12} sm={6} md={3}>
           <AppWidgetSummary
-            title="Weekly Sales"
-            total={714000}
+            title="Total number of courses"
+            total={courses.length}
             color="success"
             icon={<img alt="icon" src="/assets/icons/glass/ic_glass_bag.png" />}
           />
@@ -37,8 +82,8 @@ export default function AppView() {
 
         <Grid xs={12} sm={6} md={3}>
           <AppWidgetSummary
-            title="New Users"
-            total={1352831}
+            title="Total Number of Users"
+            total={userCount}
             color="info"
             icon={<img alt="icon" src="/assets/icons/glass/ic_glass_users.png" />}
           />

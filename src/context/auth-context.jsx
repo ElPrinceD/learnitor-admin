@@ -1,6 +1,5 @@
-
 import PropTypes from 'prop-types';
-import React, { useMemo, useState, useEffect, createContext } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, createContext } from 'react';
 
 import apiClient from 'src/api-calls/api-client';
 
@@ -10,21 +9,39 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
 
+  // Fetch user details when a token is available
+  const fetchUserDetails = useCallback(async (authToken) => {
+    try {
+      const response = await apiClient.get('/api/user/', {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      const userData = response.data;
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
+    } catch (error) {
+      console.error('Failed to fetch user details', error);
+      logout(); // Clear session on error
+    }
+  }, []);
+
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-
-    if (storedToken) setToken(storedToken);
-    if (storedUser) setUser(JSON.parse(storedUser));
-  }, []);
+    
+    if (storedToken) {
+      apiClient.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
+      fetchUserDetails(storedToken);
+    }
+  }, [fetchUserDetails]);
 
   const login = async (email, password) => {
     try {
-      // Replace the URL with your actual login endpoint
       const response = await apiClient.post('/api/login/', { email, password });
 
       const userToken = response.data.token;
-      const userData = response.data.user; // Renamed to avoid conflict
+      const userData = response.data.user;
 
       // Store token and user in localStorage
       localStorage.setItem('token', userToken);
@@ -33,11 +50,11 @@ export const AuthProvider = ({ children }) => {
       // Update state
       setToken(userToken);
       setUser(userData);
-
-      // Optionally, redirect or perform other actions on successful login
+      
+      // Set token in API client
+      // apiClient.defaults.headers.common.Authorization = `Bearer ${userToken}`;
     } catch (error) {
       console.error('Login failed', error);
-      // Handle login error (e.g., show a message to the user)
       throw new Error('Login failed. Please check your credentials and try again.');
     }
   };
@@ -45,6 +62,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    delete apiClient.defaults.headers.common.Authorization;
     setToken(null);
     setUser(null);
   };
