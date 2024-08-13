@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await apiClient.get('/api/user/', {
         headers: {
-          Authorization: `Bearer ${authToken}`,
+          Authorization: `Token ${authToken}`,
         },
       });
 
@@ -31,14 +31,14 @@ export const AuthProvider = ({ children }) => {
     const storedToken = localStorage.getItem('token');
     
     if (storedToken) {
-      apiClient.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
+      apiClient.defaults.headers.common.Authorization = `Token ${storedToken}`;
       fetchUserDetails(storedToken);
     }
   }, [fetchUserDetails]);
 
   const login = async (email, password) => {
     try {
-      const response = await apiClient.post('/api/login/', { email, password });
+      const response = await apiClient.post('/api/admin/login/', { email, password });
 
       const userToken = response.data.token;
       const userData = response.data.user;

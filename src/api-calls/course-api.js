@@ -18,7 +18,7 @@ export const getCourses = async (token) => {
 
 
 export const getTopicsForCourse = async (courseId, token) => {
-  const response = await apiClient.get(`/api/course/${courseId}/topics/`, {
+  const response = await apiClient.get(`/api/topics/${courseId}/`, {
     headers: {
       Authorization: `Token ${token}`,
     },
@@ -28,7 +28,7 @@ export const getTopicsForCourse = async (courseId, token) => {
 
 // Fetch questions for a specific topic
 export const getQuestionsForTopic = async (topicId, token) => {
-  const response = await apiClient.get(`/api/course/topic/${topicId}/questions/`, {
+  const response = await apiClient.get(`/api/questions/${topicId}/`, {
     headers: {
       Authorization: `Token ${token}`,
     },
@@ -49,10 +49,37 @@ export const addCourse = async (newCourse,token) => {
     throw error;
   }
 };
+export const updateCourse = async (courseId, courseData, token) => {
+  try {
+    const response = await apiClient.put(`/api/courses/${courseId}/`, courseData, {
+      headers: {
+        Authorization: `Token ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Failed to update course', error);
+    throw error;
+  }
+};
 
+// Function to delete a course
+export const deleteCourse = async (courseId, token) => {
+  try {
+    await apiClient.delete(`/api/courses/${courseId}/`, {
+      headers: {
+        Authorization: `Token ${token}`,
+      },
+    });
+  } catch (error) {
+    console.error('Failed to delete course', error);
+    throw error;
+  }
+};
 export const getCategories = async (token) => {
   try {
-    const response = await apiClient.get('/api/category/all/', {
+    const response = await apiClient.get('/api/categories', {
       headers: {
         Authorization: `Token ${token}`,
       },
@@ -61,6 +88,33 @@ export const getCategories = async (token) => {
     return response.data;
   } catch (error) {
     console.error('Failed to fetch categories', error);
+    throw error;
+  }
+};
+
+export const getTopicCount = async (token) => {
+  try {
+    const response = await apiClient.get('/api/topics/total/', {
+      headers: {
+        Authorization: `Token ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch total number of topics', error);
+    throw error;
+  }
+};
+export const getQuestionCount = async (token) => {
+  try {
+    const response = await apiClient.get('/api/questions/total/', {
+      headers: {
+        Authorization: `Token ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch total number of questions', error);
     throw error;
   }
 };

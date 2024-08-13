@@ -7,7 +7,7 @@ import ProtectedRoute from './protected-route';
 
 export const IndexPage = lazy(() => import('src/pages/app'));
 export const BlogPage = lazy(() => import('src/pages/blog'));
-export const UserPage = lazy(() => import('src/pages/user'));
+export const TopicsPage = lazy(() => import('src/pages/topics'));
 export const LoginPage = lazy(() => import('src/pages/login'));
 export const ProductsPage = lazy(() => import('src/pages/products'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
@@ -28,7 +28,7 @@ export default function Router() {
       ),
        children: [
         { path: 'dashboard', element: <IndexPage /> },
-        { path: 'user', element: <UserPage /> },
+        { path: 'topics', element: <TopicsPage /> },
         { path: 'products', element: <ProductsPage /> },
         { path: 'blog', element: <BlogPage /> },
       ],

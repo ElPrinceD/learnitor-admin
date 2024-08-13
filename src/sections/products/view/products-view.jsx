@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 
-import Alert from '@mui/material/Alert'; // Import Alert for error messages
+import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -17,39 +17,42 @@ import AuthContext from 'src/context/auth-context';
 import Iconify from 'src/components/iconify';
 
 import ProductCard from '../product-card';
-// import ProductSort from '../product-sort';
-import ProductFilters from '../product-filters';
-import { addCourse, getCourses, getCategories, getTopicsForCourse, getQuestionsForTopic } from '../../../api-calls/course-api';
+import {
+  addCourse,
+  getCourses,
+  updateCourse,
+  deleteCourse,
+  // getCategories,
+  // getTopicsForCourse,
+  // getQuestionsForTopic,
+} from '../../../api-calls/course-api';
 
 // ----------------------------------------------------------------------
 
 export default function ProductsView() {
-  const [openFilter, setOpenFilter] = useState(false);
-  const [categories, setCategories] = useState([]);
+  // const [categories, setCategories] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [openDialog, setOpenDialog] = useState(false); // State for dialog
+  const [openDialog, setOpenDialog] = useState(false);
   const [newCourse, setNewCourse] = useState({ title: '', description: '', url: '', category: [] });
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedCourseId, setSelectedCourseId] = useState(null);
+  const [confirmDeleteDialogOpen, setConfirmDeleteDialogOpen] = useState(false);
+  const [courseToDelete, setCourseToDelete] = useState(null);
   const { token } = useContext(AuthContext);
-
-  const handleOpenFilter = () => {
-    setOpenFilter(true);
-  };
-
-  const handleCloseFilter = () => {
-    setOpenFilter(false);
-  };
 
   const handleDialogOpen = () => {
     setOpenDialog(true);
-    setError(null); // Clear any previous errors when opening the dialog
+    setError(null);
   };
 
   const handleDialogClose = () => {
     setOpenDialog(false);
-    setNewCourse({ title: '', description: '', url: '', category: [] }); // Reset the form on close
-    setError(null); // Clear the error message on close
+    setNewCourse({ title: '', description: '', url: '', category: [] });
+    setError(null);
+    setIsEditMode(false);
+    setSelectedCourseId(null);
   };
 
   const handleInputChange = (event) => {
@@ -59,38 +62,57 @@ export default function ProductsView() {
 
   const handleAddCourse = async () => {
     try {
-      await addCourse(newCourse, token);
-      setCourses([...courses, newCourse]); // Optionally, fetch again or update state
-      setOpenDialog(false); // Close dialog on success
-      setNewCourse({ title: '', description: '', url: '', category: [] }); // Reset the form after successful addition
+      if (isEditMode && selectedCourseId) {
+        // Update course
+        const updatedCourse = await updateCourse(selectedCourseId, newCourse, token);
+        setCourses((prevCourses) =>
+          prevCourses.map((course) => (course.id === selectedCourseId ? updatedCourse : course))
+        );
+      } else {
+        // Add new course
+        const addedCourse = await addCourse(newCourse, token);
+        setCourses([...courses, addedCourse]);
+      }
+      handleDialogClose();
     } catch (err) {
-      setError('Failed to add course'); // Show error message inside the dialog
+      setError('Failed to save course');
     }
+  };
+
+  const handleEditCourse = (course) => {
+    setIsEditMode(true);
+    setSelectedCourseId(course.id);
+    setNewCourse(course);
+    setOpenDialog(true);
+  };
+
+  const handleOpenDeleteDialog = (courseId) => {
+    setCourseToDelete(courseId);
+    setConfirmDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      if (courseToDelete) {
+        await deleteCourse(courseToDelete, token);
+        setCourses(courses.filter((course) => course.id !== courseToDelete));
+        setConfirmDeleteDialogOpen(false);
+      }
+    } catch (err) {
+      setError('Failed to delete course');
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmDeleteDialogOpen(false);
+    setCourseToDelete(null);
   };
 
   useEffect(() => {
     const fetchCoursesData = async () => {
       try {
         const courseList = await getCourses(token);
-        const coursesWithDetails = await Promise.all(
-          courseList.map(async (course) => {
-            const topics = await getTopicsForCourse(course.id, token);
-            const topicsWithQuestionsCount = await Promise.all(
-              topics.map(async (topic) => {
-                const questions = await getQuestionsForTopic(topic.id, token);
-                return { ...topic, questionCount: questions.length };
-              })
-            );
-
-            return {
-              ...course,
-              topicCount: topics.length,
-              topics: topicsWithQuestionsCount,
-            };
-          })
-        );
-
-        setCourses(coursesWithDetails);
+        setCourses(courseList);
       } catch (err) {
         setError('Failed to load courses');
       } finally {
@@ -101,65 +123,58 @@ export default function ProductsView() {
     fetchCoursesData();
   }, [token]);
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const categoriesData = await getCategories(token);
-        setCategories(categoriesData);
-      } catch (err) {
-        console.error('Failed to fetch categories:', err);
-      }
-    };
+  // useEffect(() => {
+  //   const fetchCategories = async () => {
+  //     try {
+  //       const categoriesData = await getCategories(token);
+  //       setCategories(categoriesData);
+  //     } catch (err) {
+  //       console.error('Failed to fetch categories:', err);
+  //     }
+  //   };
 
-    fetchCategories();
-  }, [token]);
+  //   fetchCategories();
+  // }, [token]);
 
   if (loading) return <div>Loading courses...</div>;
-  if (error && !openDialog) return <div>{error}</div>; // Show the error outside the dialog only if it's not related to the dialog
+  if (error && !openDialog) return <div>{error}</div>;
 
   return (
     <Container>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
-        <Typography variant="h4">
-          Courses
-        </Typography>
-        <Button variant="contained" color="inherit" startIcon={<Iconify icon="eva:plus-fill" />} onClick={handleDialogOpen}>
+        <Typography variant="h4">Courses</Typography>
+        <Button
+          variant="contained"
+          color="inherit"
+          startIcon={<Iconify icon="eva:plus-fill" />}
+          onClick={handleDialogOpen}
+        >
           New Course
         </Button>
       </Stack>
 
-      <Stack
-        direction="row"
-        alignItems="center"
-        flexWrap="wrap-reverse"
-        justifyContent="flex-end"
-        sx={{ mb: 5 }}
-      >
+      <Stack direction="row" alignItems="center" flexWrap="wrap-reverse" justifyContent="flex-end" sx={{ mb: 5 }}>
         <Stack direction="row" spacing={1} flexShrink={0} sx={{ my: 1 }}>
-          <ProductFilters
-            openFilter={openFilter}
-            onOpenFilter={handleOpenFilter}
-            onCloseFilter={handleCloseFilter}
-            categories={categories}
-          />
-
-          {/* <ProductSort /> */}
+          {/* Product Filters and Sort can be added here */}
         </Stack>
       </Stack>
 
       <Grid container spacing={3}>
         {courses.map((course) => (
           <Grid key={course.id || course.title} xs={12} sm={6} md={3}>
-            <ProductCard product={course} />
+            <ProductCard
+              product={course}
+              onEdit={handleEditCourse}
+              onDelete={handleOpenDeleteDialog}
+            />
           </Grid>
         ))}
       </Grid>
 
-
       <Dialog open={openDialog} onClose={handleDialogClose}>
-        <DialogTitle>Add New Course</DialogTitle>
+        <DialogTitle>{isEditMode ? 'Edit Course' : 'Add New Course'}</DialogTitle>
         <DialogContent>
-          {error && <Alert severity="error">{error}</Alert>} {/* Display error message inside the dialog */}
+          {error && <Alert severity="error">{error}</Alert>}
           <TextField
             autoFocus
             margin="dense"
@@ -203,11 +218,26 @@ export default function ProductsView() {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDialogClose} color="secondary">
+          <Button onClick={handleDialogClose} color="error">
             Cancel
           </Button>
           <Button onClick={handleAddCourse} color="primary">
-            Add Course
+            {isEditMode ? 'Update Course' : 'Add Course'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={confirmDeleteDialogOpen} onClose={handleCancelDelete}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete this course?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete} color="error">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmDelete} color="primary">
+            Confirm
           </Button>
         </DialogActions>
       </Dialog>

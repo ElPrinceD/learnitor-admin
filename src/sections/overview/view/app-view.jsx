@@ -7,7 +7,7 @@ import Typography from '@mui/material/Typography';
 
 import apiClient from 'src/api-calls/api-client';
 import AuthContext from 'src/context/auth-context';
-import { getCourses } from 'src/api-calls/course-api';
+import { getCourses, getTopicCount, getQuestionCount} from 'src/api-calls/course-api';
 
 import Iconify from 'src/components/iconify';
 
@@ -28,6 +28,9 @@ export default function AppView() {
   const { user, token } = useContext(AuthContext);
   const [userCount, setUserCount] = useState(0); // State to store user count
   const [courses, setCourses] = useState([]);
+  const [topicCount, setTopicCount] = useState(0);
+  const [questionCount, setQuestionCount] = useState(0);
+
 
   useEffect(() => {
     const fetchUserCount = async () => {
@@ -54,7 +57,7 @@ export default function AppView() {
         const data = await getCourses(token);
         setCourses(data);
       } catch (err) {
-        console.error('Failed to load courses', courses);
+        console.error('Failed to load courses', err);
       } 
     };
 
@@ -62,7 +65,36 @@ export default function AppView() {
       fetchCourses();
     }
   }, [courses, token]);
+  
+  useEffect(() => {
+    const fetchTopicCount = async () => {
+      try {
+        const data = await getTopicCount(token);
+        setTopicCount(data.total_topics);
+      } catch (err) {
+        console.error('Failed to load total number of topics', err);
+      } 
+    };
 
+    if (token) {
+      fetchTopicCount();
+    }
+  }, [topicCount, token]);
+
+  useEffect(() => {
+    const fetchQuestionCount = async () => {
+      try {
+        const data = await getQuestionCount(token);
+        setQuestionCount(data.total_questions);
+      } catch (err) {
+        console.error('Failed to load total number of topics', err);
+      } 
+    };
+
+    if (token) {
+      fetchQuestionCount();
+    }
+  }, [questionCount, token]);
 
   return (
     <Container maxWidth="xl">
@@ -73,7 +105,7 @@ export default function AppView() {
       <Grid container spacing={3}>
         <Grid xs={12} sm={6} md={3}>
           <AppWidgetSummary
-            title="Total number of courses"
+            title="Courses"
             total={courses.length}
             color="success"
             icon={<img alt="icon" src="/assets/icons/glass/ic_glass_bag.png" />}
@@ -82,7 +114,7 @@ export default function AppView() {
 
         <Grid xs={12} sm={6} md={3}>
           <AppWidgetSummary
-            title="Total Number of Users"
+            title="Users"
             total={userCount}
             color="info"
             icon={<img alt="icon" src="/assets/icons/glass/ic_glass_users.png" />}
@@ -91,8 +123,8 @@ export default function AppView() {
 
         <Grid xs={12} sm={6} md={3}>
           <AppWidgetSummary
-            title="Item Orders"
-            total={1723315}
+            title="Topics"
+            total={topicCount}
             color="warning"
             icon={<img alt="icon" src="/assets/icons/glass/ic_glass_buy.png" />}
           />
@@ -100,8 +132,8 @@ export default function AppView() {
 
         <Grid xs={12} sm={6} md={3}>
           <AppWidgetSummary
-            title="Bug Reports"
-            total={234}
+            title="Questions"
+            total={questionCount}
             color="error"
             icon={<img alt="icon" src="/assets/icons/glass/ic_glass_message.png" />}
           />
