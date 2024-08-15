@@ -4,6 +4,8 @@ import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import Container from '@mui/material/Container';
 import TextField from '@mui/material/TextField';
 import Grid from '@mui/material/Unstable_Grid2';
@@ -13,25 +15,23 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 
 import AuthContext from 'src/context/auth-context';
+import { getTopicsForCourse, getQuestionsForTopic } from 'src/api-calls/topic-api';
+import { addCourse, getCourses, updateCourse, deleteCourse } from 'src/api-calls/course-api';
+import { addCategory, getCategories, updateCategory, deleteCategory } from 'src/api-calls/category-api';
 
 import Iconify from 'src/components/iconify';
 
 import ProductCard from '../product-card';
-import {
-  addCourse,
-  getCourses,
-  updateCourse,
-  deleteCourse,
-  // getCategories,
-  // getTopicsForCourse,
-  // getQuestionsForTopic,
-} from '../../../api-calls/course-api';
+import ProductFilters from '../product-filters';
 
 // ----------------------------------------------------------------------
 
 export default function ProductsView() {
-  // const [categories, setCategories] = useState([]);
+  const [openFilter, setOpenFilter] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [filteredCourses, setFilteredCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
@@ -40,7 +40,21 @@ export default function ProductsView() {
   const [selectedCourseId, setSelectedCourseId] = useState(null);
   const [confirmDeleteDialogOpen, setConfirmDeleteDialogOpen] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState(null);
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+  const [newCategory, setNewCategory] = useState({ name: '' });
+  const [isCategoryEditMode, setIsCategoryEditMode] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [confirmDeleteCategoryDialogOpen, setConfirmDeleteCategoryDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
   const { token } = useContext(AuthContext);
+
+  const handleOpenFilter = () => {
+    setOpenFilter(true);
+  };
+
+  const handleCloseFilter = () => {
+    setOpenFilter(false);
+  };
 
   const handleDialogOpen = () => {
     setOpenDialog(true);
@@ -55,21 +69,39 @@ export default function ProductsView() {
     setSelectedCourseId(null);
   };
 
+  const handleCategoryDialogOpen = () => {
+    setCategoryDialogOpen(true);
+    setError(null);
+  };
+
+  const handleCategoryDialogClose = () => {
+    setCategoryDialogOpen(false);
+    setNewCategory({ name: '' });
+    setError(null);
+    setIsCategoryEditMode(false);
+    setSelectedCategoryId(null);
+  };
+
   const handleInputChange = (event) => {
     const { name, value } = event.target;
     setNewCourse({ ...newCourse, [name]: value });
   };
 
+  const handleCategoryChange = (event) => {
+    const {
+      target: { value },
+    } = event;
+    setNewCourse({ ...newCourse, category: typeof value === 'string' ? value.split(',') : value });
+  };
+
   const handleAddCourse = async () => {
     try {
       if (isEditMode && selectedCourseId) {
-        // Update course
         const updatedCourse = await updateCourse(selectedCourseId, newCourse, token);
         setCourses((prevCourses) =>
           prevCourses.map((course) => (course.id === selectedCourseId ? updatedCourse : course))
         );
       } else {
-        // Add new course
         const addedCourse = await addCourse(newCourse, token);
         setCourses([...courses, addedCourse]);
       }
@@ -108,11 +140,85 @@ export default function ProductsView() {
     setCourseToDelete(null);
   };
 
+  const handleCategorySelection = (newSelectedCategories) => {
+    setSelectedCategoryIds(newSelectedCategories);
+  };
+
+  const handleCategoryInputChange = (event) => {
+    const { name, value } = event.target;
+    setNewCategory({ ...newCategory, [name]: value });
+  };
+
+  const handleAddCategory = async () => {
+    try {
+      if (isCategoryEditMode && selectedCategoryId) {
+        const updatedCategory = await updateCategory(selectedCategoryId, newCategory, token);
+        setCategories((prevCategories) =>
+          prevCategories.map((category) =>
+            category.id === selectedCategoryId ? updatedCategory : category
+          )
+        );
+      } else {
+        const addedCategory = await addCategory(newCategory, token);
+        setCategories([...categories, addedCategory]);
+      }
+      handleCategoryDialogClose();
+    } catch (err) {
+      setError('Failed to save category');
+    }
+  };
+
+  const handleEditCategory = (category) => {
+    setIsCategoryEditMode(true);
+    setSelectedCategoryId(category.id);
+    setNewCategory(category);
+    setCategoryDialogOpen(true);
+  };
+
+  const handleOpenDeleteCategoryDialog = (categoryId) => {
+    setCategoryToDelete(categoryId);
+    setConfirmDeleteCategoryDialogOpen(true);
+  };
+
+  const handleConfirmDeleteCategory = async () => {
+    try {
+      if (categoryToDelete) {
+        await deleteCategory(categoryToDelete, token);
+        setCategories(categories.filter((category) => category.id !== categoryToDelete));
+        setConfirmDeleteCategoryDialogOpen(false);
+      }
+    } catch (err) {
+      setError('Failed to delete category');
+    }
+  };
+
+  const handleCancelDeleteCategory = () => {
+    setConfirmDeleteCategoryDialogOpen(false);
+    setCategoryToDelete(null);
+  };
+
   useEffect(() => {
     const fetchCoursesData = async () => {
       try {
         const courseList = await getCourses(token);
-        setCourses(courseList);
+        const coursesWithDetails = await Promise.all(
+          courseList.map(async (course) => {
+            const topics = await getTopicsForCourse(course.id, token);
+            const topicsWithQuestionsCount = await Promise.all(
+              topics.map(async (topic) => {
+                const questions = await getQuestionsForTopic(topic.id, token);
+                return { ...topic, questionCount: questions.length };
+              })
+            );
+
+            return {
+              ...course,
+              topicCount: topics.length,
+              topics: topicsWithQuestionsCount,
+            };
+          })
+        );
+        setCourses(coursesWithDetails);
       } catch (err) {
         setError('Failed to load courses');
       } finally {
@@ -123,45 +229,68 @@ export default function ProductsView() {
     fetchCoursesData();
   }, [token]);
 
-  // useEffect(() => {
-  //   const fetchCategories = async () => {
-  //     try {
-  //       const categoriesData = await getCategories(token);
-  //       setCategories(categoriesData);
-  //     } catch (err) {
-  //       console.error('Failed to fetch categories:', err);
-  //     }
-  //   };
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const categoriesData = await getCategories(token);
+        setCategories(categoriesData);
+      } catch (err) {
+        console.error('Failed to fetch categories:', err);
+      }
+    };
 
-  //   fetchCategories();
-  // }, [token]);
+    fetchCategories();
+  }, [token]);
+
+  useEffect(() => {
+    if (selectedCategoryIds.length > 0) {
+      setFilteredCourses(
+        courses.filter((course) => course.category.some((cat) => selectedCategoryIds.includes(cat)))
+      );
+    } else {
+      setFilteredCourses(courses);
+    }
+  }, [selectedCategoryIds, courses]);
 
   if (loading) return <div>Loading courses...</div>;
-  if (error && !openDialog) return <div>{error}</div>;
+  if (error) return <Alert severity="error">{error}</Alert>;
+
+ 
 
   return (
     <Container>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between">
         <Typography variant="h4">Courses</Typography>
-        <Button
-          variant="contained"
-          color="inherit"
-          startIcon={<Iconify icon="eva:plus-fill" />}
-          onClick={handleDialogOpen}
-        >
-          New Course
-        </Button>
+        <Stack direction="row" flexWrap="wrap-reverse" alignItems="center" justifyContent="flex-end" sx={{ mb: 5 }}>
+          <Stack direction="row" spacing={1} flexShrink={0}>
+            <Button variant="contained" onClick={handleDialogOpen} startIcon={<Iconify icon="eva:plus-fill" />}>
+              New Course
+            </Button>
+            <Button variant="contained" onClick={handleCategoryDialogOpen} startIcon={<Iconify icon="eva:plus-fill" />}>
+              New Program
+            </Button>
+          </Stack>
+        </Stack>
       </Stack>
 
       <Stack direction="row" alignItems="center" flexWrap="wrap-reverse" justifyContent="flex-end" sx={{ mb: 5 }}>
-        <Stack direction="row" spacing={1} flexShrink={0} sx={{ my: 1 }}>
-          {/* Product Filters and Sort can be added here */}
+        <Stack direction="row" spacing={1} flexShrink={0} >
+          <ProductFilters
+            openFilter={openFilter}
+            onOpenFilter={handleOpenFilter}
+            onCloseFilter={handleCloseFilter}
+            onCategorySelection={handleCategorySelection}
+            categories={categories}
+            selectedCategories={selectedCategoryIds}
+            handleEditCategory={handleEditCategory}
+            handleDeleteCategory={handleOpenDeleteCategoryDialog}
+          />
         </Stack>
       </Stack>
 
       <Grid container spacing={3}>
-        {courses.map((course) => (
-          <Grid key={course.id || course.title} xs={12} sm={6} md={3}>
+        {filteredCourses.map((course) => (
+          <Grid key={course.id} xs={12} sm={6} md={3}>
             <ProductCard
               product={course}
               onEdit={handleEditCourse}
@@ -206,29 +335,64 @@ export default function ProductsView() {
             value={newCourse.url}
             onChange={handleInputChange}
           />
-          <TextField
-            margin="dense"
-            name="category"
-            label="Category"
-            type="number"
-            fullWidth
-            variant="outlined"
+          <Select
+            labelId="category-select-label"
+            id="category-select"
+            label="Select Program(s)"
+            multiple
             value={newCourse.category}
-            onChange={(e) => setNewCourse({ ...newCourse, category: [e.target.value] })}
-          />
+            onChange={handleCategoryChange}
+            fullWidth
+            renderValue={(selected) => selected.map((catId) => categories.find((cat) => cat.id === catId)?.name).join(', ')}>
+            {categories.map((category) => (
+              <MenuItem
+                key={category.id}
+                value={category.id}>
+                {category.name}
+              </MenuItem>
+            ))}
+          </Select>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDialogClose} color="error">
             Cancel
           </Button>
           <Button onClick={handleAddCourse} color="primary">
-            {isEditMode ? 'Update Course' : 'Add Course'}
+            {isEditMode ? 'Save Changes' : 'Add Course'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={categoryDialogOpen}
+        onClose={handleCategoryDialogClose}
+        >
+        <DialogTitle>{isCategoryEditMode ? 'Edit Program' : 'Add Program'}</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            id="name"
+            name="name"
+            label="Title"
+            type="text"
+            fullWidth
+            value={newCategory.name}
+            onChange={handleCategoryInputChange}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCategoryDialogClose} color='error'>
+            Cancel
+          </Button>
+          <Button onClick={handleAddCategory} color='primary'>
+            {isCategoryEditMode ? 'Save Changes' : 'Add Program'}
           </Button>
         </DialogActions>
       </Dialog>
 
       <Dialog open={confirmDeleteDialogOpen} onClose={handleCancelDelete}>
-        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>
           <Typography>Are you sure you want to delete this course?</Typography>
         </DialogContent>
@@ -241,6 +405,20 @@ export default function ProductsView() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Dialog open={confirmDeleteCategoryDialogOpen} onClose={handleCancelDeleteCategory}>
+    <DialogTitle>Confirm Deletion</DialogTitle>
+    <DialogContent>
+      <Typography>Are you sure you want to delete this program?</Typography>
+    </DialogContent>
+    <DialogActions>
+      <Button onClick={handleCancelDeleteCategory}>Cancel</Button>
+      <Button onClick={handleConfirmDeleteCategory} color="error">
+        Delete
+      </Button>
+    </DialogActions>
+  </Dialog>
+
     </Container>
   );
 }

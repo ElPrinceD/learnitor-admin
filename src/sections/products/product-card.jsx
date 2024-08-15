@@ -17,14 +17,14 @@ export default function ShopProductCard({ product, onEdit, onDelete }) {
   const handleCardClick = (e) => {
     // Prevent triggering navigation if an edit or delete button is clicked
     if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'svg' && e.target.tagName !== 'path') {
-      router.push(`/topics`);
+      router.push(`/products/${product.id}/topics`);
     }
   };
 
   const renderImg = (
     <Box
       component="img"
-      alt={product.title}
+      alt={LibraryBooksIcon}
       src={product.url}
       sx={{
         top: 0,

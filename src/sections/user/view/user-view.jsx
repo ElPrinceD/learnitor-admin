@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { useState, useEffect, useContext } from 'react';
 
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
@@ -12,6 +12,7 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TextField from '@mui/material/TextField';
 import Container from '@mui/material/Container';
+import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -19,30 +20,28 @@ import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 
+import AuthContext from 'src/context/auth-context';
+import {
+  addTopic,
+  updateTopic,
+  deleteTopic,
+  getTopicsForCourse,
+} from 'src/api-calls/topic-api';
+
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 
-const dummyTopics = [
-  { id: 1, name: 'Topic 1', description: 'Description 1' },
-  { id: 2, name: 'Topic 2', description: 'Description 2' },
-  { id: 3, name: 'Topic 3', description: 'Description 3' },
-];
-
-// Placeholder API calls
-const getTopics = async (courseId) => dummyTopics;
-const addTopic = async (courseId, topic) => ({ ...topic, id: Date.now() });
-const updateTopic = async (topicId, updatedTopic) => updatedTopic;
-const deleteTopic = async (topicId) => true;
-
 export default function TopicsPage() {
-  const { courseId } = useParams(); // Get courseId from URL
+  const { token } = useContext(AuthContext);
+  const { courseId: courseIdString } = useParams();
+  const courseId = Number(courseIdString); // or parseInt(courseIdString, 10);
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [confirmDeleteDialogOpen, setConfirmDeleteDialogOpen] = useState(false);
   const [topicToDelete, setTopicToDelete] = useState(null);
-  const [newTopic, setNewTopic] = useState({ name: '', description: '' });
+  const [newTopic, setNewTopic] = useState({ title: '', description: '' });
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedTopicId, setSelectedTopicId] = useState(null);
   const [page, setPage] = useState(0);
@@ -51,7 +50,7 @@ export default function TopicsPage() {
   useEffect(() => {
     const fetchTopicsData = async () => {
       try {
-        const topicsList = await getTopics(courseId);
+        const topicsList = await getTopicsForCourse(courseId, token);
         setTopics(topicsList);
       } catch (err) {
         setError('Failed to load topics');
@@ -61,7 +60,7 @@ export default function TopicsPage() {
     };
 
     fetchTopicsData();
-  }, [courseId]);
+  }, [token, courseId]);
 
   const handleDialogOpen = () => {
     setOpenDialog(true);
@@ -70,7 +69,7 @@ export default function TopicsPage() {
 
   const handleDialogClose = () => {
     setOpenDialog(false);
-    setNewTopic({ name: '', description: '' });
+    setNewTopic({ title: '', description: '' });
     setError(null);
     setIsEditMode(false);
     setSelectedTopicId(null);
@@ -89,8 +88,8 @@ export default function TopicsPage() {
   const handleConfirmDelete = async () => {
     try {
       if (topicToDelete) {
-       await deleteTopic(topicToDelete);
-      setTopics(topics.filter((topic) => topic.id !== topicToDelete));
+        await deleteTopic(topicToDelete, token);
+        setTopics(topics.filter((topic) => topic.id !== topicToDelete));
         setConfirmDeleteDialogOpen(false);
       }
     } catch (err) {
@@ -103,16 +102,21 @@ export default function TopicsPage() {
     setTopicToDelete(null);
   };
 
-  const handleAddTopic = async () => {
+ const handleAddTopic = async () => {
     try {
+      const topicToAddOrUpdate = { ...newTopic, course: courseId };
       if (isEditMode && selectedTopicId) {
-        const updatedTopic = await updateTopic(selectedTopicId, newTopic);
+        const updatedTopic = await updateTopic(selectedTopicId, topicToAddOrUpdate, token);
         setTopics((prevTopics) =>
-          prevTopics.map((topic) => (topic.id === selectedTopicId ? updatedTopic : topic))
+          prevTopics.map((topic) =>
+            topic.id === selectedTopicId ? updatedTopic : topic
+          )
         );
       } else {
-        const addedTopic = await addTopic(courseId, newTopic);
+        const addedTopic = await addTopic(topicToAddOrUpdate, token);
         setTopics([...topics, addedTopic]);
+              console.log("bjmjmh", addedTopic)
+
       }
       handleDialogClose();
     } catch (err) {
@@ -127,7 +131,6 @@ export default function TopicsPage() {
     setOpenDialog(true);
   };
 
- 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
@@ -165,25 +168,21 @@ export default function TopicsPage() {
                   .map((topic) => (
                     <TableRow key={topic.id}>
                       <TableCell component="th" scope="row">
-                        {topic.name}
+                        {topic.title}
                       </TableCell>
                       <TableCell align="left">{topic.description}</TableCell>
                       <TableCell align="right">
                         <Stack direction="row" spacing={1}>
-                          <Button
-                            variant="text"
-                            color="primary"
-                            onClick={() => handleEditTopic(topic)}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant="text"
-                            color="error"
-                            onClick={() => handleOpenDeleteDialog(topic.id)}
-                          >
-                            Delete
-                          </Button>
+                          <IconButton size="small" onClick={() => handleEditTopic(topic)}>
+                             <Iconify icon="eva:edit-outline" />
+                          </IconButton>
+                           <IconButton
+                             size="small"
+                             color="error"
+                             onClick={() => handleOpenDeleteDialog(topic.id)}
+                            >
+                              <Iconify icon="eva:trash-2-outline" />
+                            </IconButton>
                         </Stack>
                       </TableCell>
                     </TableRow>
@@ -211,12 +210,12 @@ export default function TopicsPage() {
           <TextField
             autoFocus
             margin="dense"
-            name="name"
-            label="Name"
+            name="title"
+            label="Title"
             type="text"
             fullWidth
             variant="outlined"
-            value={newTopic.name}
+            value={newTopic.title || ''}
             onChange={handleInputChange}
           />
           <TextField
@@ -226,7 +225,7 @@ export default function TopicsPage() {
             type="text"
             fullWidth
             variant="outlined"
-            value={newTopic.description}
+            value={newTopic.description || ''}
             onChange={handleInputChange}
           />
         </DialogContent>
@@ -235,21 +234,22 @@ export default function TopicsPage() {
             Cancel
           </Button>
           <Button onClick={handleAddTopic} color="primary">
-            {isEditMode ? 'Update Topic' : 'Add Topic'}
+            {isEditMode ? 'Save Changes' : 'Add Topic'}
           </Button>
         </DialogActions>
       </Dialog>
+
       <Dialog open={confirmDeleteDialogOpen} onClose={handleCancelDelete}>
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
-          <Typography>Are you sure you want to delete this topic?</Typography>
+          Are you sure you want to delete this topic?
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCancelDelete} color="error">
+          <Button onClick={handleCancelDelete} color="primary">
             Cancel
           </Button>
-          <Button onClick={handleConfirmDelete} color="primary">
-            Confirm
+          <Button onClick={handleConfirmDelete} color="error">
+            Delete
           </Button>
         </DialogActions>
       </Dialog>

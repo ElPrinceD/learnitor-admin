@@ -2,11 +2,10 @@ import PropTypes from 'prop-types';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import Radio from '@mui/material/Radio';
 import Button from '@mui/material/Button';
 import Drawer from '@mui/material/Drawer';
 import Divider from '@mui/material/Divider';
-import RadioGroup from '@mui/material/RadioGroup';
+import Checkbox from '@mui/material/Checkbox';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -14,20 +13,64 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 
-export default function ProductFilters({ openFilter, onOpenFilter, onCloseFilter, categories }) {
+export default function ProductFilters({
+  openFilter,
+  onOpenFilter,
+  onCloseFilter,
+  categories,
+  selectedCategories,
+  onCategorySelection,
+  handleEditCategory,
+  handleDeleteCategory,
+}) {
+  const handleCategoryToggle = (categoryId) => {
+    const currentIndex = selectedCategories.indexOf(categoryId);
+    const newSelectedCategories = [...selectedCategories];
+
+    if (currentIndex === -1) {
+      newSelectedCategories.push(categoryId);
+    } else {
+      newSelectedCategories.splice(currentIndex, 1);
+    }
+
+    onCategorySelection(newSelectedCategories);
+  };
+
   const renderCategory = (
     <Stack spacing={1}>
       <Typography variant="h5">Programs</Typography>
-      <RadioGroup>
-        {categories.map((category) => (
+      {categories.map((category) => (
+        <Stack
+          key={category.id}
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+        >
           <FormControlLabel
-            key={category.id}
-            value={category.name}
-            control={<Radio />}
+             sx={{flex:1}}
+          
+            control={
+              <Checkbox
+                checked={selectedCategories.includes(category.id)}
+                onChange={() => handleCategoryToggle(category.id)}
+              />
+            }
             label={category.name}
           />
-        ))}
-      </RadioGroup>
+          <Box>
+            <IconButton size="small" onClick={() => handleEditCategory(category)}>
+              <Iconify icon="eva:edit-outline" />
+            </IconButton>
+            <IconButton
+              size="small"
+              color="error"
+              onClick={() => handleDeleteCategory(category.id)}
+            >
+              <Iconify icon="eva:trash-2-outline" />
+            </IconButton>
+          </Box>
+        </Stack>
+      ))}
     </Stack>
   );
 
@@ -39,7 +82,7 @@ export default function ProductFilters({ openFilter, onOpenFilter, onCloseFilter
         endIcon={<Iconify icon="ic:round-filter-list" />}
         onClick={onOpenFilter}
       >
-        Filter&nbsp;
+        Programs&nbsp;
       </Button>
 
       <Drawer
@@ -57,7 +100,7 @@ export default function ProductFilters({ openFilter, onOpenFilter, onCloseFilter
           sx={{ px: 1, py: 2 }}
         >
           <Typography variant="h6" sx={{ ml: 1 }}>
-            Filter
+            Programs
           </Typography>
           <IconButton onClick={onCloseFilter}>
             <Iconify icon="eva:close-fill" />
@@ -81,6 +124,7 @@ export default function ProductFilters({ openFilter, onOpenFilter, onCloseFilter
             color="inherit"
             variant="outlined"
             startIcon={<Iconify icon="ic:round-clear-all" />}
+            onClick={() => onCategorySelection([])} // Reset categories
           >
             Clear All
           </Button>
@@ -94,5 +138,9 @@ ProductFilters.propTypes = {
   openFilter: PropTypes.bool,
   onOpenFilter: PropTypes.func,
   onCloseFilter: PropTypes.func,
-  categories: PropTypes.array.isRequired, // Accept categories as an array prop
+  categories: PropTypes.array.isRequired,
+  selectedCategories: PropTypes.array.isRequired, // Array of selected category IDs
+  onCategorySelection: PropTypes.func.isRequired, // Handler for selection change
+  handleEditCategory: PropTypes.func.isRequired,
+  handleDeleteCategory: PropTypes.func.isRequired,
 };

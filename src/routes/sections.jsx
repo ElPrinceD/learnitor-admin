@@ -28,7 +28,7 @@ export default function Router() {
       ),
        children: [
         { path: 'dashboard', element: <IndexPage /> },
-        { path: 'topics', element: <TopicsPage /> },
+        { path: '/products/:courseId/topics', element: <TopicsPage /> },
         { path: 'products', element: <ProductsPage /> },
         { path: 'blog', element: <BlogPage /> },
       ],

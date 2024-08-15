@@ -7,7 +7,8 @@ import Typography from '@mui/material/Typography';
 
 import apiClient from 'src/api-calls/api-client';
 import AuthContext from 'src/context/auth-context';
-import { getCourses, getTopicCount, getQuestionCount} from 'src/api-calls/course-api';
+import { getCourses} from 'src/api-calls/course-api';
+import { getTopicCount, getQuestionCount } from 'src/api-calls/topic-api';
 
 import Iconify from 'src/components/iconify';
 

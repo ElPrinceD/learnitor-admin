@@ -7,7 +7,7 @@ import AuthContext from 'src/context/auth-context';
 const ProtectedRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
 
-  if (!user || user.role !== 'admin') {
+  if (!user /* || user.role !== 'admin' */) {
     return <Navigate to="/" replace />;
   }
 
