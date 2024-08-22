@@ -1,17 +1,17 @@
 import { Helmet } from 'react-helmet-async';
 
-import { UserView } from 'src/sections/user/view';
+import { QuestionsAnswersView } from 'src/sections/qna/view';
 
 // ----------------------------------------------------------------------
 
-export default function TopicsPage() {
+export default function QuestionsPage() {
   return (
     <>
       <Helmet>
-        <title> Topics | Learnitor </title>
+        <title> Q&A | Learnitor </title>
       </Helmet>
 
-      <UserView />
+      <QuestionsAnswersView />
     </>
   );
 }

@@ -20,6 +20,8 @@ import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 
+import { useRouter } from 'src/routes/hooks';
+
 import AuthContext from 'src/context/auth-context';
 import {
   addTopic,
@@ -31,7 +33,9 @@ import {
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 
+
 export default function TopicsPage() {
+  const router = useRouter();
   const { token } = useContext(AuthContext);
   const { courseId: courseIdString } = useParams();
   const courseId = Number(courseIdString); // or parseInt(courseIdString, 10);
@@ -61,7 +65,10 @@ export default function TopicsPage() {
 
     fetchTopicsData();
   }, [token, courseId]);
-
+  
+  const handleTopicClick = (topicId) => {
+    router.push(`/topics/${topicId}/topic-content`)
+  }
   const handleDialogOpen = () => {
     setOpenDialog(true);
     setError(null);
@@ -167,7 +174,7 @@ export default function TopicsPage() {
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((topic) => (
                     <TableRow key={topic.id}>
-                      <TableCell component="th" scope="row">
+                      <TableCell component="th" scope="row" onClick={handleTopicClick(topic.id)}>
                         {topic.title}
                       </TableCell>
                       <TableCell align="left">{topic.description}</TableCell>

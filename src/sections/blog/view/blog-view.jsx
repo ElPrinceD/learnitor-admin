@@ -1,45 +1,58 @@
+import { useParams } from 'react-router-dom';
+
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
+// import Button from '@mui/material/Button';
+
+import Card from '@mui/material/Card';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Unstable_Grid2';
 import Typography from '@mui/material/Typography';
+import CardContent from '@mui/material/CardContent';
+import CardActionArea from '@mui/material/CardActionArea';
 
-import { posts } from 'src/_mock/blog';
-
-import Iconify from 'src/components/iconify';
-
-import PostCard from '../post-card';
-import PostSort from '../post-sort';
-import PostSearch from '../post-search';
+import { useRouter } from 'src/routes/hooks';
 
 // ----------------------------------------------------------------------
 
 export default function BlogView() {
+  const router = useRouter();
+  const { topicId: topicIdString } = useParams();
+  const topicId = Number(topicIdString);
+
+
+  const handleNavigation = (path) => {
+    router.push(`/topic-content/${topicId}/${path}`);
+  };
+
   return (
     <Container>
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-        <Typography variant="h4">Blog</Typography>
-
-        <Button variant="contained" color="inherit" startIcon={<Iconify icon="eva:plus-fill" />}>
-          New Post
-        </Button>
-      </Stack>
-
-      <Stack mb={5} direction="row" alignItems="center" justifyContent="space-between">
-        <PostSearch posts={posts} />
-        <PostSort
-          options={[
-            { value: 'latest', label: 'Latest' },
-            { value: 'popular', label: 'Popular' },
-            { value: 'oldest', label: 'Oldest' },
-          ]}
-        />
+        <Typography variant="h4">Topic Overview</Typography>
       </Stack>
 
       <Grid container spacing={3}>
-        {posts.map((post, index) => (
-          <PostCard key={post.id} post={post} index={index} />
-        ))}
+        <Grid xs={12} sm={6} md={6}>
+          <Card>
+            <CardActionArea onClick={() => handleNavigation('materials')}>
+              <CardContent>
+                <Typography variant="h5" component="div">
+                  Materials
+                </Typography>
+              </CardContent>
+            </CardActionArea>
+          </Card>
+        </Grid>
+        <Grid xs={12} sm={6} md={6}>
+          <Card>
+            <CardActionArea onClick={() => handleNavigation('questions-answers')}>
+              <CardContent>
+                <Typography variant="h5" component="div">
+                  Questions and Answers
+                </Typography>
+              </CardContent>
+            </CardActionArea>
+          </Card>
+        </Grid>
       </Grid>
     </Container>
   );
