@@ -167,29 +167,29 @@ export default function TopicsPage() {
 
       <Card>
         <Scrollbar>
-          <TableContainer sx={{ overflow: 'unset' }}>
+             <TableContainer sx={{ overflow: 'unset' }}>
             <Table sx={{ minWidth: 800 }}>
               <TableBody>
                 {topics
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((topic) => (
-                    <TableRow key={topic.id}>
-                      <TableCell component="th" scope="row" onClick={handleTopicClick(topic.id)}>
+                    <TableRow key={topic.id} onClick={() => handleTopicClick(topic.id)} style={{ cursor: 'pointer' }}>
+                      <TableCell component="th" scope="row">
                         {topic.title}
                       </TableCell>
                       <TableCell align="left">{topic.description}</TableCell>
                       <TableCell align="right">
                         <Stack direction="row" spacing={1}>
-                          <IconButton size="small" onClick={() => handleEditTopic(topic)}>
-                             <Iconify icon="eva:edit-outline" />
+                          <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleEditTopic(topic); }}>
+                            <Iconify icon="eva:edit-outline" />
                           </IconButton>
-                           <IconButton
-                             size="small"
-                             color="error"
-                             onClick={() => handleOpenDeleteDialog(topic.id)}
-                            >
-                              <Iconify icon="eva:trash-2-outline" />
-                            </IconButton>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={(e) => { e.stopPropagation(); handleOpenDeleteDialog(topic.id); }}
+                          >
+                            <Iconify icon="eva:trash-2-outline" />
+                          </IconButton>
                         </Stack>
                       </TableCell>
                     </TableRow>

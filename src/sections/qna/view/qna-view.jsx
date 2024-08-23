@@ -1,27 +1,21 @@
+import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext } from 'react';
 
-import Grid from '@mui/material/Grid';
-import Stack from '@mui/material/Stack';
-import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
-import TextField from '@mui/material/TextField';
-import Container from '@mui/material/Container';
-import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import DialogTitle from '@mui/material/DialogTitle';
 import DeleteIcon from '@mui/icons-material/Delete';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
+import {
+  Grid, Stack, Alert, Button,  Select, Dialog, MenuItem, Checkbox,
+  TextField, Container,
+   Typography, IconButton,DialogTitle,DialogContent, DialogActions, FormControlLabel,
+} from '@mui/material';
 
 import AuthContext from 'src/context/auth-context';
-import {  createAnswer, updateAnswer,deleteAnswer, getAnswersByQuestion} from 'src/api-calls/answer-api'
 import {
-  createQuestion,
-  updateQuestion,
-  deleteQuestion,getQuestionsByTopic
+  createAnswer, updateAnswer, deleteAnswer, getAnswersByQuestion
+} from 'src/api-calls/answer-api';
+import {
+  createQuestion, updateQuestion, deleteQuestion, getQuestionsByTopic
 } from 'src/api-calls/question-api';
 
 export default function QuestionsAnswersView() {
@@ -36,19 +30,20 @@ export default function QuestionsAnswersView() {
   const [isQuestionEditMode, setIsQuestionEditMode] = useState(false);
   const [isAnswerEditMode, setIsAnswerEditMode] = useState(false);
   const [error, setError] = useState(null);
+  const { topicId: topicIdString } = useParams();
+  const topicId = Number(topicIdString);
 
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const data = await getQuestionsByTopic(1, token); // Example topic ID
+        const data = await getQuestionsByTopic(topicId, token);
         setQuestions(data);
       } catch (err) {
         setError('Failed to load questions');
       }
     };
-
     fetchQuestions();
-  }, [token]);
+  }, [topicId, token]);
 
   const handleOpenQuestionDialog = () => {
     setOpenQuestionDialog(true);
@@ -62,11 +57,11 @@ export default function QuestionsAnswersView() {
     setSelectedQuestionId(null);
   };
 
-  // const handleOpenAnswerDialog = (questionId) => {
-  //   setSelectedQuestionId(questionId);
-  //   setOpenAnswerDialog(true);
-  //   setError(null);
-  // };
+  const handleOpenAnswerDialog = (questionId) => {
+    setSelectedQuestionId(questionId);
+    setOpenAnswerDialog(true);
+    setError(null);
+  };
 
   const handleCloseAnswerDialog = () => {
     setOpenAnswerDialog(false);
@@ -86,6 +81,7 @@ export default function QuestionsAnswersView() {
 
   const handleAddOrUpdateQuestion = async () => {
     try {
+      questionFormData.topic = topicId; // Assign topic ID
       if (isQuestionEditMode && selectedQuestionId) {
         await updateQuestion(selectedQuestionId, questionFormData, token);
       } else {
@@ -99,7 +95,8 @@ export default function QuestionsAnswersView() {
 
   const handleAddOrUpdateAnswer = async () => {
     try {
-      if (isAnswerEditMode && selectedQuestionId) {
+      answerFormData.question = selectedQuestionId; // Assign question ID
+      if (isAnswerEditMode) {
         await updateAnswer(answerFormData.question, answerFormData, token);
       } else {
         await createAnswer(answerFormData, token);
@@ -116,7 +113,13 @@ export default function QuestionsAnswersView() {
     setOpenQuestionDialog(true);
   };
 
-  const handleDeleteQuestion = async (questionId) => {
+  const handleDeleteQuestion = (questionId) => {
+    if (window.confirm('Are you sure you want to delete this question?')) {
+      deleteQuestionConfirmed(questionId);
+    }
+  };
+
+  const deleteQuestionConfirmed = async (questionId) => {
     try {
       await deleteQuestion(questionId, token);
       setQuestions(questions.filter((q) => q.id !== questionId));
@@ -131,7 +134,13 @@ export default function QuestionsAnswersView() {
     setOpenAnswerDialog(true);
   };
 
-  const handleDeleteAnswer = async (answerId) => {
+  const handleDeleteAnswer = (answerId) => {
+    if (window.confirm('Are you sure you want to delete this answer?')) {
+      deleteAnswerConfirmed(answerId);
+    }
+  };
+
+  const deleteAnswerConfirmed = async (answerId) => {
     try {
       await deleteAnswer(answerId, token);
       setAnswers(answers.filter((a) => a.id !== answerId));
@@ -168,6 +177,9 @@ export default function QuestionsAnswersView() {
                 </IconButton>
                 <Button variant="outlined" onClick={() => handleFetchAnswers(question.id)}>
                   View Answers
+                </Button>
+                <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenAnswerDialog(question.id)}>
+                  Add Answer
                 </Button>
               </div>
             </Stack>
@@ -206,17 +218,22 @@ export default function QuestionsAnswersView() {
             variant="outlined"
             value={questionFormData.text}
             onChange={handleQuestionInputChange}
+            inputProps={{ spellCheck: 'true' }} // Enable spell check
           />
-          <TextField
+          <Select
             margin="dense"
             name="level"
             label="Level"
-            type="text"
             fullWidth
             variant="outlined"
             value={questionFormData.level}
             onChange={handleQuestionInputChange}
-          />
+          >
+            <MenuItem value="Beginner">Beginner</MenuItem>
+            <MenuItem value="Intermediate">Intermediate</MenuItem>
+            <MenuItem value="Advanced">Advanced</MenuItem>
+            <MenuItem value="Master">Master</MenuItem>
+          </Select>
           <TextField
             margin="dense"
             name="duration"
@@ -227,17 +244,8 @@ export default function QuestionsAnswersView() {
             value={questionFormData.duration}
             onChange={handleQuestionInputChange}
           />
-          <TextField
-            margin="dense"
-            name="topic"
-            label="Topic ID"
-            type="number"
-            fullWidth
-            variant="outlined"
-            value={questionFormData.topic}
-            onChange={handleQuestionInputChange}
-          />
         </DialogContent>
+        {error && <Alert severity="error">{error}</Alert>}
         <DialogActions>
           <Button onClick={handleCloseQuestionDialog} color="secondary">
             Cancel
@@ -262,28 +270,23 @@ export default function QuestionsAnswersView() {
             variant="outlined"
             value={answerFormData.text}
             onChange={handleAnswerInputChange}
+            inputProps={{ spellCheck: 'true' }} // Enable spell check
           />
-          <TextField
-            margin="dense"
-            name="isRight"
-            label="Is Correct?"
-            type="checkbox"
-            fullWidth
-            variant="outlined"
-            value={answerFormData.isRight}
-            onChange={handleAnswerInputChange}
-          />
-          <TextField
-            margin="dense"
-            name="question"
-            label="Question ID"
-            type="number"
-            fullWidth
-            variant="outlined"
-            value={answerFormData.question}
-            onChange={handleAnswerInputChange}
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={answerFormData.isRight}
+                onChange={(event) =>
+                  setAnswerFormData({ ...answerFormData, isRight: event.target.checked })
+                }
+                name="isRight"
+                color="primary"
+              />
+            }
+            label="Correct Answer"
           />
         </DialogContent>
+        {error && <Alert severity="error">{error}</Alert>}
         <DialogActions>
           <Button onClick={handleCloseAnswerDialog} color="secondary">
             Cancel

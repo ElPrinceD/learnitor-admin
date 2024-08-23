@@ -5,7 +5,7 @@ const QUESTION_API_BASE_URL = '/api/questions';
 
 export const getQuestionsByTopic = async (topicId, token) => {
   try {
-    const response = await apiClient.get(`${QUESTION_API_BASE_URL}/by_topics/?topic_id=${topicId}`, {
+    const response = await apiClient.get(`${QUESTION_API_BASE_URL}/?topic_id=${topicId}`, {
       headers: {
         Authorization: `Token ${token}`,
       },
