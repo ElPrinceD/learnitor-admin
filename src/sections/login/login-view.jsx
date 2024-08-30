@@ -128,7 +128,7 @@ export default function LoginView() {
         >
           <Typography variant="h4" sx={{
             height: 0.2
-          }}>Sign in to Learnitor Admin</Typography>
+          }}>Sign in</Typography>
 
           {renderForm}
         </Card>

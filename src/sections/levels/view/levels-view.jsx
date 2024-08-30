@@ -14,28 +14,28 @@ import { useRouter } from 'src/routes/hooks';
 
 // ----------------------------------------------------------------------
 
-export default function BlogView() {
+export default function LevelsView() {
   const router = useRouter();
   const { topicId: topicIdString } = useParams();
   const topicId = Number(topicIdString);
 
-  const handleNavigation = (path) => {
-    router.push(`/topic-content/${topicId}/${path}`);
+  const handleNavigation = (level) => {
+  router.push(`/topic-content/${topicId}/levels/${level}/questions-answers`);
   };
 
   return (
     <Container>
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-        <Typography variant="h4">Topic Overview</Typography>
+        <Typography variant="h4">Select Level</Typography>
       </Stack>
 
       <Grid container spacing={3}>
         <Grid xs={12} sm={6} md={6}>
           <Card>
-            <CardActionArea onClick={() => handleNavigation('materials')}>
+            <CardActionArea onClick={() => handleNavigation('Beginner')}>
               <CardContent>
                 <Typography variant="h5" component="div">
-                  Materials
+                  Beginner
                 </Typography>
               </CardContent>
             </CardActionArea>
@@ -43,10 +43,32 @@ export default function BlogView() {
         </Grid>
         <Grid xs={12} sm={6} md={6}>
           <Card>
-            <CardActionArea onClick={() => handleNavigation('levels')}>
+            <CardActionArea onClick={() => handleNavigation('Intermediate')}>
               <CardContent>
                 <Typography variant="h5" component="div">
-                  Questions and Answers
+                  Intermediate
+                </Typography>
+              </CardContent>
+            </CardActionArea>
+          </Card>
+        </Grid>
+        <Grid xs={12} sm={6} md={6}>
+          <Card>
+            <CardActionArea onClick={() => handleNavigation('Master')}>
+              <CardContent>
+                <Typography variant="h5" component="div">
+                  Master
+                </Typography>
+              </CardContent>
+            </CardActionArea>
+          </Card>
+        </Grid>
+        <Grid xs={12} sm={6} md={6}>
+          <Card>
+            <CardActionArea onClick={() => handleNavigation('Advanced')}>
+              <CardContent>
+                <Typography variant="h5" component="div">
+                  Advanced
                 </Typography>
               </CardContent>
             </CardActionArea>
