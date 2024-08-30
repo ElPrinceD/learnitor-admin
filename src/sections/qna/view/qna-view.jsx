@@ -103,8 +103,8 @@ export default function QuestionsAnswersView() {
     try {
       questionFormData.topic = topicId; // Assign topic ID
       questionFormData.level = level; // Assign level from URL
-      if (isQuestionEditMode && selectedQuestionId) {
-        await updateQuestion(selectedQuestionId, questionFormData, token);
+      if (isQuestionEditMode && questionFormData.id) {
+        await updateQuestion(questionFormData.id, questionFormData, token);
       } else {
         await createQuestion(questionFormData, token);
       }

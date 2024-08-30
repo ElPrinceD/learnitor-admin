@@ -33,7 +33,7 @@ export const addCourse = async (newCourse, token) => {
 
 export const updateCourse = async (courseId, courseData, token) => {
   try {
-    const response = await apiClient.put(`${COURSE_API_BASE_URL}/${courseId}/`, courseData, {
+    const response = await apiClient.patch(`${COURSE_API_BASE_URL}/${courseId}/`, courseData, {
       headers: {
         Authorization: `Token ${token}`,
         'Content-Type': 'application/json',

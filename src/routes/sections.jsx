@@ -12,6 +12,7 @@ export const LoginPage = lazy(() => import('src/pages/login'));
 export const ProductsPage = lazy(() => import('src/pages/products'));
 export const QuestionsPage = lazy(() => import('src/pages/qna'))
 export const LevelsPage = lazy(() => import('src/pages/levels'))
+export const MaterialsPage = lazy(() => import('src/pages/material'))
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 
 // ----------------------------------------------------------------------
@@ -34,6 +35,7 @@ export default function Router() {
         { path: 'products', element: <ProductsPage /> },
          { path: '/topics/:topicId/topic-content', element: <BlogPage /> },
         { path: '/topic-content/:topicId/levels', element: <LevelsPage /> },
+        { path: '/topic-content/:topicId/materials', element: <MaterialsPage /> },
         { path: '/topic-content/:topicId/levels/:level/questions-answers', element: <QuestionsPage />}
       ],
     },

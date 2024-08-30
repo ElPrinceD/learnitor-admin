@@ -34,7 +34,7 @@ export const createAnswer = async (answerData, token) => {
 // Update an answer
 export const updateAnswer = async (answerId, answerData, token) => {
   try {
-    const response = await apiClient.put(`${ANSWER_API_BASE_URL}/${answerId}/`, answerData, {
+    const response = await apiClient.patch(`${ANSWER_API_BASE_URL}/${answerId}/`, answerData, {
       headers: {
         Authorization: `Token ${token}`,
       },

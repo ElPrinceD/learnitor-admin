@@ -33,7 +33,7 @@ export const addCategory = async (category, token) => {
 
 export const updateCategory = async (categoryId, category, token) => {
   try {
-    const response = await apiClient.put(`${CATEGORY_API_BASE_URL}/${categoryId}/`, category, {
+    const response = await apiClient.patch(`${CATEGORY_API_BASE_URL}/${categoryId}/`, category, {
       headers: {
         Authorization: `Token ${token}`,
         'Content-Type': 'application/json',

@@ -47,7 +47,7 @@ export const addTopic = async (topic, token) => {
 
 export const updateTopic = async (topicId, updatedTopic, token) => {
   try {
-    const response = await apiClient.put(`${TOPIC_API_BASE_URL}/${topicId}/`, updatedTopic, {
+    const response = await apiClient.patch(`${TOPIC_API_BASE_URL}/${topicId}/`, updatedTopic, {
       headers: {
         Authorization: `Token ${token}`,
         'Content-Type': 'application/json',
