@@ -1,12 +1,23 @@
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext } from 'react';
 
+import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
+import Stack from '@mui/material/Stack';
+import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import Checkbox from '@mui/material/Checkbox';
 import AddIcon from '@mui/icons-material/Add';
-import {
-  Grid, Stack, Alert, Button, Dialog, Checkbox,
-  TextField, Container, Typography, IconButton,
-  DialogTitle, DialogContent, DialogActions, FormControlLabel,
-} from '@mui/material';
+import TextField from '@mui/material/TextField';
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import AuthContext from 'src/context/auth-context';
 import {
@@ -18,10 +29,9 @@ import {
 
 import Iconify from 'src/components/iconify';
 
-
 export default function QuestionsAnswersView() {
   const { token } = useContext(AuthContext);
-  const { topicId: topicIdString, level } = useParams();  // Extract level from URL params
+  const { topicId: topicIdString, level, topicTitle } = useParams(); // Extract level from URL params
   const topicId = Number(topicIdString);
 
   const [questions, setQuestions] = useState([]);
@@ -38,10 +48,13 @@ export default function QuestionsAnswersView() {
   const [confirmDeleteAnswerDialogOpen, setConfirmDeleteAnswerDialogOpen] = useState(false);
   const [deleteQuestionId, setDeleteQuestionId] = useState(null); // Store the ID of the question to delete
   const [deleteAnswerId, setDeleteAnswerId] = useState(null); // Store the ID of the answer to delete
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
+  // const [loadingAnswers, setLoadingAnswers] = useState(false);
 
   // Fetch questions with filtering by level
   useEffect(() => {
     const fetchQuestions = async () => {
+      setLoadingQuestions(true);
       try {
         const data = await getQuestionsByTopic(topicId, token);
         // Filter questions by level
@@ -49,6 +62,8 @@ export default function QuestionsAnswersView() {
         setQuestions(filteredQuestions);
       } catch (err) {
         setError('Failed to load questions');
+      } finally {
+        setLoadingQuestions(false);
       }
     };
     fetchQuestions();
@@ -56,13 +71,14 @@ export default function QuestionsAnswersView() {
 
   // Fetch answers for a specific question
   const handleFetchAnswers = async (questionId) => {
+    // setLoadingAnswers(true);
     try {
       const data = await getAnswersByQuestion(questionId, token);
       setAnswers(data);
-      setSelectedQuestionId(questionId);  // Ensure answers are linked to the correct question
+      setSelectedQuestionId(questionId); // Ensure answers are linked to the correct question
     } catch (err) {
       setError('Failed to load answers');
-    }
+    } 
   };
 
   const handleOpenQuestionDialog = () => {
@@ -115,7 +131,7 @@ export default function QuestionsAnswersView() {
       setQuestions(filteredQuestions);
     } catch (err) {
       setError('Failed to save question');
-    }
+    } 
   };
 
   const handleAddOrUpdateAnswer = async () => {
@@ -132,7 +148,7 @@ export default function QuestionsAnswersView() {
       setAnswers(updatedAnswers);
     } catch (err) {
       setError('Failed to save answer');
-    }
+    } 
   };
 
   const handleEditQuestion = (question) => {
@@ -161,7 +177,7 @@ export default function QuestionsAnswersView() {
       setConfirmDeleteDialogOpen(false);
     } catch (err) {
       setError('Failed to delete question');
-    }
+    } 
   };
 
   const handleEditAnswer = (answer) => {
@@ -189,12 +205,39 @@ export default function QuestionsAnswersView() {
       setConfirmDeleteAnswerDialogOpen(false);
     } catch (err) {
       setError('Failed to delete answer');
-    }
+    } 
   };
+
+  if (loadingQuestions) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Container>
-      <Typography variant="h4" gutterBottom>{level.charAt(0).toUpperCase() + level.slice(1)} Questions ({questions.length})</Typography>
+      <Typography
+        variant='h3'
+        gutterBottom
+        sx={{
+          fontWeight: 'bold',
+          textAlign: 'center',
+          mb: 2
+        }}
+      >
+        {topicTitle}
+      </Typography>
+      <Typography variant="h4" sx={{ mb: 4 }}>
+        {level.charAt(0).toUpperCase() + level.slice(1)} Questions ({questions.length})
+      </Typography>
       {questions.length === 0 && <Typography>No questions set.</Typography>}
       {error && <Alert severity="error">{error}</Alert>}
       <Grid container spacing={2}>
@@ -202,7 +245,7 @@ export default function QuestionsAnswersView() {
           <Grid key={question.id} item xs={12}>
             <Stack direction={{ xs: 'column', sm: 'row' }} alignItems="center" justifyContent="space-between" spacing={2}>
               <Typography variant="h6">{question.text}</Typography>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              <Stack direction="row" spacing={1}>
                 <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleEditQuestion(question); }}>
                   <Iconify icon="eva:edit-outline" />
                 </IconButton>
@@ -214,21 +257,21 @@ export default function QuestionsAnswersView() {
                   <Iconify icon="eva:trash-2-outline" />
                 </IconButton>
                 <Button variant="outlined" onClick={() => handleFetchAnswers(question.id)} style={{ marginRight: '8px' }}>
-                  View Answers
+                  View Answer
                 </Button>
                 <Button variant="contained" color="primary" onClick={() => handleOpenAnswerDialog(question.id)}>
                   Add Answer
                 </Button>
-              </div>
+              </Stack>
             </Stack>
             {selectedQuestionId === question.id && (
-              <div style={{ paddingLeft: '16px', paddingTop: '8px', marginBottom: '16px' }}>
+              <Grid style={{ paddingLeft: '16px', paddingTop: '8px', marginBottom: '16px' }}>
                 {answers.length === 0 ? (
                   <Typography>No answers added.</Typography>
                 ) : (
-                  <ul>
-                    {answers.map((answer) => (
-                      <li key={answer.id}>
+                    <Stack>
+                      {answers.map((answer) => (
+                      <Stack key={answer.id}>
                         {answer.text}
                         <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleEditAnswer(answer); }}>
                           <Iconify icon="eva:edit-outline" />
@@ -240,11 +283,11 @@ export default function QuestionsAnswersView() {
                         >
                           <Iconify icon="eva:trash-2-outline" />
                         </IconButton>
-                      </li>
+                      </Stack>
                     ))}
-                  </ul>
+                  </Stack>
                 )}
-              </div>
+              </Grid>
             )}
           </Grid>
         ))}

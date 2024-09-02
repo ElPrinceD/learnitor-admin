@@ -1,20 +1,35 @@
-import { useState, useEffect, useContext } from 'react';
 import { useParams } from 'react-router-dom';
-import {
-  Button, Container, Dialog, DialogActions, DialogContent, DialogTitle,
-  TextField, Table, TableBody, TableCell, TableContainer, TableHead,
-  TableRow, Paper, IconButton, TablePagination, Alert, Link
-} from '@mui/material';
+import { useState, useEffect, useContext } from 'react';
+
+import Link from '@mui/material/Link';
+import Alert from '@mui/material/Alert';
+import Paper from '@mui/material/Paper';
+import Table from '@mui/material/Table';
+import Dialog from '@mui/material/Dialog';
+import Button from '@mui/material/Button';
 import AddIcon from '@mui/icons-material/Add';
+import TableRow from '@mui/material/TableRow';
+import TextField from '@mui/material/TextField';
+import TableHead from '@mui/material/TableHead';
+import TableCell from '@mui/material/TableCell';
+import Container from '@mui/material/Container';
+import TableBody from '@mui/material/TableBody';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import TableContainer from '@mui/material/TableContainer';
+import TablePagination from '@mui/material/TablePagination';
 
 import AuthContext from 'src/context/auth-context';
-import { getMaterialsByTopic, createMaterial, updateMaterial, deleteMaterial } from 'src/api-calls/material-api';
+import {  createMaterial, updateMaterial, deleteMaterial,getMaterialsByTopic } from 'src/api-calls/material-api';
 
 import Iconify from 'src/components/iconify';
 
 export default function MaterialsView() {
   const { token } = useContext(AuthContext);
-  const { topicId: topicIdString } = useParams();
+  const { topicId: topicIdString, topicTitle } = useParams();
   const topicId = Number(topicIdString);
 
   const [materials, setMaterials] = useState([]);
@@ -118,7 +133,18 @@ export default function MaterialsView() {
 
   return (
     <Container>
-      <h2>Materials</h2>
+       <Typography
+        variant='h3'
+        gutterBottom
+        sx={{
+          fontWeight: 'bold',
+          textAlign: 'center',
+          mb: 2
+        }}
+      >
+        {topicTitle}
+      </Typography>
+      <h2> Materials</h2>
       {error && <Alert severity="error">{error}</Alert>}
       <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenMaterialDialog} style={{ marginBottom: '16px' }}>
         Add Material

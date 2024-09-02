@@ -16,15 +16,26 @@ import { useRouter } from 'src/routes/hooks';
 
 export default function BlogView() {
   const router = useRouter();
-  const { topicId: topicIdString } = useParams();
+  const { topicId: topicIdString, topicTitle } = useParams();
   const topicId = Number(topicIdString);
 
   const handleNavigation = (path) => {
-    router.push(`/topic-content/${topicId}/${path}`);
+    router.push(`/topic-content/${topicTitle}/${topicId}/${path}`);
   };
 
   return (
     <Container>
+       <Typography
+        variant='h3'
+        gutterBottom
+        sx={{
+          fontWeight: 'bold',
+          textAlign: 'center',
+          mb: 2
+        }}
+      >
+        {topicTitle}
+      </Typography>
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
         <Typography variant="h4">Topic Overview</Typography>
       </Stack>

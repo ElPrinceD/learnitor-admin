@@ -16,17 +16,28 @@ import { useRouter } from 'src/routes/hooks';
 
 export default function LevelsView() {
   const router = useRouter();
-  const { topicId: topicIdString } = useParams();
+  const { topicId: topicIdString, topicTitle } = useParams();
   const topicId = Number(topicIdString);
 
   const handleNavigation = (level) => {
-  router.push(`/topic-content/${topicId}/levels/${level}/questions-answers`);
+    router.push(`/topic-content/${topicTitle}/${topicId}/levels/${level}/questions-answers`);
   };
 
   return (
     <Container>
+       <Typography
+        variant='h3'
+        gutterBottom
+        sx={{
+          fontWeight: 'bold',
+          textAlign: 'center',
+          mb: 2
+        }}
+      >
+        {topicTitle}
+      </Typography>
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-        <Typography variant="h4">Select Level</Typography>
+        <Typography variant="h4"> Select Level</Typography>
       </Stack>
 
       <Grid container spacing={3}>

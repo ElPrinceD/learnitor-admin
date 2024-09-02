@@ -8,11 +8,12 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);  // New loading state
 
   // Fetch user details when a token is available
   const fetchUserDetails = useCallback(async (authToken) => {
     try {
-      const response = await apiClient.get('/api/user/', {
+      const response = await apiClient.get('/api/admin/login/', {
         headers: {
           Authorization: `Token ${authToken}`,
         },
@@ -24,16 +25,26 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Failed to fetch user details', error);
       logout(); // Clear session on error
+    } finally {
+      setLoading(false);  // Stop loading once done
     }
   }, []);
 
+  // Restore token and user from localStorage on initial load
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
-    
+    const storedUser = localStorage.getItem('user');
+
     if (storedToken) {
+      setToken(storedToken);
       apiClient.defaults.headers.common.Authorization = `Token ${storedToken}`;
-      fetchUserDetails(storedToken);
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));  // Restore user if available
+      } else {
+        fetchUserDetails(storedToken);  // Fetch if user not in localStorage
+      }
     }
+    setLoading(false);  // Stop loading even if no token is found
   }, [fetchUserDetails]);
 
   const login = async (email, password) => {
@@ -50,9 +61,9 @@ export const AuthProvider = ({ children }) => {
       // Update state
       setToken(userToken);
       setUser(userData);
-      
+
       // Set token in API client
-      // apiClient.defaults.headers.common.Authorization = `Bearer ${userToken}`;
+      apiClient.defaults.headers.common.Authorization = `Token ${userToken}`;
     } catch (error) {
       console.error('Login failed', error);
       throw new Error('Login failed. Please check your credentials and try again.');
@@ -67,7 +78,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  const value = useMemo(() => ({ token, user, login, logout }), [token, user]);
+  const value = useMemo(() => ({ token, user, loading, login, logout }), [token, user, loading]);
 
   return (
     <AuthContext.Provider value={value}>

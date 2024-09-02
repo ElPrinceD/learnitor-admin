@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 
+import  Box  from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
@@ -13,6 +14,7 @@ import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import AuthContext from 'src/context/auth-context';
 import { getTopicsForCourse, getQuestionsForTopic } from 'src/api-calls/topic-api';
@@ -252,7 +254,19 @@ export default function ProductsView() {
     }
   }, [selectedCategoryIds, courses]);
 
-  if (loading) return <div>Loading courses...</div>;
+   if (loading) {
+     return (
+       <Box
+        sx={{
+         display: 'flex',
+          justifyContent: 'center',
+         alignItems: 'center',
+       }}
+     >
+       <CircularProgress />
+     </Box>
+     );
+   } 
   if (error) return <Alert severity="error">{error}</Alert>;
 
  
@@ -328,7 +342,7 @@ export default function ProductsView() {
           <TextField
             margin="dense"
             name="url"
-            label="URL"
+            label="Image URL"
             type="text"
             fullWidth
             variant="outlined"

@@ -31,12 +31,12 @@ export default function Router() {
       ),
        children: [
         { path: 'dashboard', element: <IndexPage /> },
-        { path: '/products/:courseId/topics', element: <TopicsPage /> },
-        { path: 'products', element: <ProductsPage /> },
-         { path: '/topics/:topicId/topic-content', element: <BlogPage /> },
-        { path: '/topic-content/:topicId/levels', element: <LevelsPage /> },
-        { path: '/topic-content/:topicId/materials', element: <MaterialsPage /> },
-        { path: '/topic-content/:topicId/levels/:level/questions-answers', element: <QuestionsPage />}
+        { path: '/courses/:courseTitle/:courseId/topics', element: <TopicsPage /> },
+        { path: 'courses', element: <ProductsPage /> },
+         { path: '/topics/:topicTitle/:topicId/topic-content', element: <BlogPage /> },
+        { path: '/topic-content/:topicTitle/:topicId/levels', element: <LevelsPage /> },
+        { path: '/topic-content/:topicTitle/:topicId/materials', element: <MaterialsPage /> },
+        { path: '/topic-content/:topicTitle/:topicId/levels/:level/questions-answers', element: <QuestionsPage />}
       ],
     },
     {

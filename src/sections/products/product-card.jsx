@@ -17,7 +17,7 @@ export default function ShopProductCard({ product, onEdit, onDelete }) {
   const handleCardClick = (e) => {
     // Prevent triggering navigation if an edit or delete button is clicked
     if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'svg' && e.target.tagName !== 'path') {
-      router.push(`/products/${product.id}/topics`);
+      router.push(`/courses/${product.title}/${product.id}/topics`);
     }
   };
 

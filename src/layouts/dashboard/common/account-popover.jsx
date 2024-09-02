@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 
 import Box from '@mui/material/Box';
 import Avatar from '@mui/material/Avatar';
@@ -8,8 +8,11 @@ import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import CircularProgress from '@mui/material/CircularProgress';
 
-import { account } from 'src/_mock/account';
+import { useRouter } from 'src/routes/hooks';
+
+import AuthContext from 'src/context/auth-context';
 
 // ----------------------------------------------------------------------
 
@@ -18,20 +21,39 @@ const MENU_OPTIONS = [
     label: 'Home',
     icon: 'eva:home-fill',
   },
-  {
-    label: 'Profile',
-    icon: 'eva:person-fill',
-  },
-  {
-    label: 'Settings',
-    icon: 'eva:settings-2-fill',
-  },
+  // Uncomment these if you plan to add more menu options in the future
+  // {
+  //   label: 'Profile',
+  //   icon: 'eva:person-fill',
+  // },
+  // {
+  //   label: 'Settings',
+  //   icon: 'eva:settings-2-fill',
+  // },
 ];
 
 // ----------------------------------------------------------------------
 
 export default function AccountPopover() {
   const [open, setOpen] = useState(null);
+  const { user, logout } = useContext(AuthContext);
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState('');
+
+  const handleLogout = async () => {
+    setLoading(true);
+    setErrors('');
+
+    try {
+      await logout();
+      router.push('/'); 
+    } catch (error) {
+      setErrors('Could not log out, please try again');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleOpen = (event) => {
     setOpen(event.currentTarget);
@@ -39,6 +61,7 @@ export default function AccountPopover() {
 
   const handleClose = () => {
     setOpen(null);
+    router.push('/dashboard'); 
   };
 
   return (
@@ -56,15 +79,15 @@ export default function AccountPopover() {
         }}
       >
         <Avatar
-          src={account.photoURL}
-          alt={account.displayName}
+          src={user.profile_picture}
+          alt={user.first_name}
           sx={{
             width: 36,
             height: 36,
             border: (theme) => `solid 2px ${theme.palette.background.default}`,
           }}
         >
-          {account.displayName.charAt(0).toUpperCase()}
+          {user.first_name.charAt(0).toUpperCase()}
         </Avatar>
       </IconButton>
 
@@ -85,10 +108,10 @@ export default function AccountPopover() {
       >
         <Box sx={{ my: 1.5, px: 2 }}>
           <Typography variant="subtitle2" noWrap>
-            {account.displayName}
+            {user.first_name} {user.last_name}
           </Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>
-            {account.email}
+            {user.email}
           </Typography>
         </Box>
 
@@ -105,11 +128,21 @@ export default function AccountPopover() {
         <MenuItem
           disableRipple
           disableTouchRipple
-          onClick={handleClose}
+          onClick={handleLogout}  // Call handleLogout instead of logout directly
           sx={{ typography: 'body2', color: 'error.main', py: 1.5 }}
         >
-          Logout
+          {loading ? (
+            <CircularProgress size={20} />
+          ) : (
+            'Logout'
+          )}
         </MenuItem>
+
+        {errors && (
+          <Box sx={{ color: 'error.main', px: 2, py: 1 }}>
+            <Typography variant="body2">{errors}</Typography>
+          </Box>
+        )}
       </Popover>
     </>
   );
