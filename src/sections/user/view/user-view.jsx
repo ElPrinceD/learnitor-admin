@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext } from 'react';
 
+import  Box  from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
@@ -19,6 +20,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
@@ -37,7 +39,7 @@ import Scrollbar from 'src/components/scrollbar';
 export default function TopicsPage() {
   const router = useRouter();
   const { token } = useContext(AuthContext);
-  const { courseId: courseIdString } = useParams();
+  const { courseId: courseIdString, courseTitle } = useParams();
   const courseId = Number(courseIdString); // or parseInt(courseIdString, 10);
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -66,8 +68,8 @@ export default function TopicsPage() {
     fetchTopicsData();
   }, [token, courseId]);
   
-  const handleTopicClick = (topicId) => {
-    router.push(`/topics/${topicId}/topic-content`)
+  const handleTopicClick = (topicTitle, topicId) => {
+    router.push(`/topics/${topicTitle}/${topicId}/topic-content`)
   }
   const handleDialogOpen = () => {
     setOpenDialog(true);
@@ -147,14 +149,35 @@ export default function TopicsPage() {
     setRowsPerPage(parseInt(event.target.value, 10));
   };
 
-  if (loading) return <div>Loading topics...</div>;
-  if (error && !openDialog) return <div>{error}</div>;
+ if (loading) {
+     return (
+       <Box
+        sx={{
+         display: 'flex',
+          justifyContent: 'center',
+         alignItems: 'center',
+       }}
+     >
+       <CircularProgress />
+     </Box>
+     );
+   }   if (error && !openDialog) return <div>{error}</div>;
 
   return (
     <Container>
+       <Typography
+        variant='h3'
+        gutterBottom
+        sx={{
+          fontWeight: 'bold',
+          textAlign: 'center',
+          mb: 2
+        }}
+      >
+        {courseTitle}
+      </Typography>
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
         <Typography variant="h4">Topics</Typography>
-
         <Button
           variant="contained"
           color="inherit"
@@ -173,7 +196,7 @@ export default function TopicsPage() {
                 {topics
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((topic) => (
-                    <TableRow key={topic.id} onClick={() => handleTopicClick(topic.id)} style={{ cursor: 'pointer' }}>
+                    <TableRow key={topic.id} onClick={() => handleTopicClick(topic.title, topic.id)} style={{ cursor: 'pointer' }}>
                       <TableCell component="th" scope="row">
                         {topic.title}
                       </TableCell>

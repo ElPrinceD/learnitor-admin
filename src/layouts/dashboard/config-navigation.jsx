@@ -24,7 +24,7 @@ const navConfig = [
   // },
   {
     title: 'Courses',
-    path: '/products',
+    path: '/courses',
     icon: icon('ic_cart'),
   },
   // {

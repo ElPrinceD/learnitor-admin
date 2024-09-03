@@ -1,14 +1,23 @@
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext } from 'react';
 
+import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
+import Stack from '@mui/material/Stack';
+import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import Checkbox from '@mui/material/Checkbox';
 import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import {
-  Grid, Stack, Alert, Button,  Select, Dialog, MenuItem, Checkbox,
-  TextField, Container,
-   Typography, IconButton,DialogTitle,DialogContent, DialogActions, FormControlLabel,
-} from '@mui/material';
+import TextField from '@mui/material/TextField';
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import AuthContext from 'src/context/auth-context';
 import {
@@ -18,32 +27,59 @@ import {
   createQuestion, updateQuestion, deleteQuestion, getQuestionsByTopic
 } from 'src/api-calls/question-api';
 
+import Iconify from 'src/components/iconify';
+
 export default function QuestionsAnswersView() {
   const { token } = useContext(AuthContext);
+  const { topicId: topicIdString, level, topicTitle } = useParams(); // Extract level from URL params
+  const topicId = Number(topicIdString);
+
   const [questions, setQuestions] = useState([]);
   const [selectedQuestionId, setSelectedQuestionId] = useState(null);
   const [answers, setAnswers] = useState([]);
   const [openQuestionDialog, setOpenQuestionDialog] = useState(false);
   const [openAnswerDialog, setOpenAnswerDialog] = useState(false);
-  const [questionFormData, setQuestionFormData] = useState({ text: '', level: '', duration: '', topic: null });
+  const [questionFormData, setQuestionFormData] = useState({ text: '', duration: '', topic: null });
   const [answerFormData, setAnswerFormData] = useState({ text: '', isRight: false, question: null });
   const [isQuestionEditMode, setIsQuestionEditMode] = useState(false);
   const [isAnswerEditMode, setIsAnswerEditMode] = useState(false);
   const [error, setError] = useState(null);
-  const { topicId: topicIdString } = useParams();
-  const topicId = Number(topicIdString);
+  const [confirmDeleteDialogOpen, setConfirmDeleteDialogOpen] = useState(false);
+  const [confirmDeleteAnswerDialogOpen, setConfirmDeleteAnswerDialogOpen] = useState(false);
+  const [deleteQuestionId, setDeleteQuestionId] = useState(null); // Store the ID of the question to delete
+  const [deleteAnswerId, setDeleteAnswerId] = useState(null); // Store the ID of the answer to delete
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
+  // const [loadingAnswers, setLoadingAnswers] = useState(false);
 
+  // Fetch questions with filtering by level
   useEffect(() => {
     const fetchQuestions = async () => {
+      setLoadingQuestions(true);
       try {
         const data = await getQuestionsByTopic(topicId, token);
-        setQuestions(data);
+        // Filter questions by level
+        const filteredQuestions = data.filter(question => question.level === level);
+        setQuestions(filteredQuestions);
       } catch (err) {
         setError('Failed to load questions');
+      } finally {
+        setLoadingQuestions(false);
       }
     };
     fetchQuestions();
-  }, [topicId, token]);
+  }, [topicId, token, level]);
+
+  // Fetch answers for a specific question
+  const handleFetchAnswers = async (questionId) => {
+    // setLoadingAnswers(true);
+    try {
+      const data = await getAnswersByQuestion(questionId, token);
+      setAnswers(data);
+      setSelectedQuestionId(questionId); // Ensure answers are linked to the correct question
+    } catch (err) {
+      setError('Failed to load answers');
+    } 
+  };
 
   const handleOpenQuestionDialog = () => {
     setOpenQuestionDialog(true);
@@ -52,7 +88,7 @@ export default function QuestionsAnswersView() {
 
   const handleCloseQuestionDialog = () => {
     setOpenQuestionDialog(false);
-    setQuestionFormData({ text: '', level: '', duration: '', topic: null });
+    setQuestionFormData({ text: '', duration: '', topic: null });
     setIsQuestionEditMode(false);
     setSelectedQuestionId(null);
   };
@@ -82,29 +118,37 @@ export default function QuestionsAnswersView() {
   const handleAddOrUpdateQuestion = async () => {
     try {
       questionFormData.topic = topicId; // Assign topic ID
-      if (isQuestionEditMode && selectedQuestionId) {
-        await updateQuestion(selectedQuestionId, questionFormData, token);
+      questionFormData.level = level; // Assign level from URL
+      if (isQuestionEditMode && questionFormData.id) {
+        await updateQuestion(questionFormData.id, questionFormData, token);
       } else {
         await createQuestion(questionFormData, token);
       }
       handleCloseQuestionDialog();
+      // Update the list of questions after creation or update
+      const updatedQuestions = await getQuestionsByTopic(topicId, token);
+      const filteredQuestions = updatedQuestions.filter(q => q.level === level);
+      setQuestions(filteredQuestions);
     } catch (err) {
       setError('Failed to save question');
-    }
+    } 
   };
 
   const handleAddOrUpdateAnswer = async () => {
     try {
       answerFormData.question = selectedQuestionId; // Assign question ID
-      if (isAnswerEditMode) {
-        await updateAnswer(answerFormData.question, answerFormData, token);
+      if (isAnswerEditMode && answerFormData.id) {
+        await updateAnswer(answerFormData.id, answerFormData, token); // Use the correct answer ID
       } else {
         await createAnswer(answerFormData, token);
       }
       handleCloseAnswerDialog();
+      // Refresh answers list after addition or update
+      const updatedAnswers = await getAnswersByQuestion(selectedQuestionId, token);
+      setAnswers(updatedAnswers);
     } catch (err) {
       setError('Failed to save answer');
-    }
+    } 
   };
 
   const handleEditQuestion = (question) => {
@@ -114,18 +158,26 @@ export default function QuestionsAnswersView() {
   };
 
   const handleDeleteQuestion = (questionId) => {
-    if (window.confirm('Are you sure you want to delete this question?')) {
-      deleteQuestionConfirmed(questionId);
-    }
+    setDeleteQuestionId(questionId); // Set the ID of the question to delete
+    setConfirmDeleteDialogOpen(true); // Open the confirmation dialog
   };
 
-  const deleteQuestionConfirmed = async (questionId) => {
+  const handleCancelDelete = () => {
+    setConfirmDeleteDialogOpen(false);
+    setDeleteQuestionId(null);
+  };
+
+  const handleConfirmDelete = async () => {
     try {
-      await deleteQuestion(questionId, token);
-      setQuestions(questions.filter((q) => q.id !== questionId));
+      await deleteQuestion(deleteQuestionId, token);
+      // Update the list of questions after deletion
+      const updatedQuestions = await getQuestionsByTopic(topicId, token);
+      const filteredQuestions = updatedQuestions.filter(q => q.level === level);
+      setQuestions(filteredQuestions);
+      setConfirmDeleteDialogOpen(false);
     } catch (err) {
       setError('Failed to delete question');
-    }
+    } 
   };
 
   const handleEditAnswer = (answer) => {
@@ -135,74 +187,116 @@ export default function QuestionsAnswersView() {
   };
 
   const handleDeleteAnswer = (answerId) => {
-    if (window.confirm('Are you sure you want to delete this answer?')) {
-      deleteAnswerConfirmed(answerId);
-    }
+    setDeleteAnswerId(answerId); // Set the ID of the answer to delete
+    setConfirmDeleteAnswerDialogOpen(true); // Open the confirmation dialog for answers
   };
 
-  const deleteAnswerConfirmed = async (answerId) => {
+  const handleCancelDeleteAnswer = () => {
+    setConfirmDeleteAnswerDialogOpen(false);
+    setDeleteAnswerId(null);
+  };
+
+  const handleConfirmDeleteAnswer = async () => {
     try {
-      await deleteAnswer(answerId, token);
-      setAnswers(answers.filter((a) => a.id !== answerId));
+      await deleteAnswer(deleteAnswerId, token);
+      // Update the list of answers after deletion
+      const updatedAnswers = await getAnswersByQuestion(selectedQuestionId, token);
+      setAnswers(updatedAnswers);
+      setConfirmDeleteAnswerDialogOpen(false);
     } catch (err) {
       setError('Failed to delete answer');
-    }
+    } 
   };
 
-  const handleFetchAnswers = async (questionId) => {
-    try {
-      const data = await getAnswersByQuestion(questionId, token);
-      setAnswers(data);
-      setSelectedQuestionId(questionId);
-    } catch (err) {
-      setError('Failed to load answers');
-    }
-  };
+  if (loadingQuestions) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Container>
-      <Typography variant="h4">Questions & Answers</Typography>
+      <Typography
+        variant='h3'
+        gutterBottom
+        sx={{
+          fontWeight: 'bold',
+          textAlign: 'center',
+          mb: 2
+        }}
+      >
+        {topicTitle}
+      </Typography>
+      <Typography variant="h4" sx={{ mb: 4 }}>
+        {level.charAt(0).toUpperCase() + level.slice(1)} Questions ({questions.length})
+      </Typography>
+      {questions.length === 0 && <Typography>No questions set.</Typography>}
       {error && <Alert severity="error">{error}</Alert>}
       <Grid container spacing={2}>
         {questions.map((question) => (
           <Grid key={question.id} item xs={12}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Stack direction={{ xs: 'column', sm: 'row' }} alignItems="center" justifyContent="space-between" spacing={2}>
               <Typography variant="h6">{question.text}</Typography>
-              <div>
-                <IconButton onClick={() => handleEditQuestion(question)}>
-                  <EditIcon />
+              <Stack direction="row" spacing={1}>
+                <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleEditQuestion(question); }}>
+                  <Iconify icon="eva:edit-outline" />
                 </IconButton>
-                <IconButton onClick={() => handleDeleteQuestion(question.id)}>
-                  <DeleteIcon />
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={(e) => { e.stopPropagation(); handleDeleteQuestion(question.id); }}
+                >
+                  <Iconify icon="eva:trash-2-outline" />
                 </IconButton>
-                <Button variant="outlined" onClick={() => handleFetchAnswers(question.id)}>
-                  View Answers
+                <Button variant="outlined" onClick={() => handleFetchAnswers(question.id)} style={{ marginRight: '8px' }}>
+                  View Answer
                 </Button>
-                <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenAnswerDialog(question.id)}>
+                <Button variant="contained" color="primary" onClick={() => handleOpenAnswerDialog(question.id)}>
                   Add Answer
                 </Button>
-              </div>
+              </Stack>
             </Stack>
-            {selectedQuestionId === question.id &&
-              answers.map((answer) => (
-                <Stack key={answer.id} direction="row" alignItems="center" justifyContent="space-between">
-                  <Typography variant="body1">{answer.text}</Typography>
-                  <div>
-                    <IconButton onClick={() => handleEditAnswer(answer)}>
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleDeleteAnswer(answer.id)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </div>
-                </Stack>
-              ))}
+            {selectedQuestionId === question.id && (
+              <Grid style={{ paddingLeft: '16px', paddingTop: '8px', marginBottom: '16px' }}>
+                {answers.length === 0 ? (
+                  <Typography>No answers added.</Typography>
+                ) : (
+                    <Stack>
+                      {answers.map((answer) => (
+                      <Stack key={answer.id}>
+                        {answer.text}
+                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleEditAnswer(answer); }}>
+                          <Iconify icon="eva:edit-outline" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={(e) => { e.stopPropagation(); handleDeleteAnswer(answer.id); }}
+                        >
+                          <Iconify icon="eva:trash-2-outline" />
+                        </IconButton>
+                      </Stack>
+                    ))}
+                  </Stack>
+                )}
+              </Grid>
+            )}
           </Grid>
         ))}
       </Grid>
-      <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenQuestionDialog}>
-        Add Question
-      </Button>
+      <div style={{ marginTop: '24px' }}>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenQuestionDialog}>
+          Add Question
+        </Button>
+      </div>
 
       {/* Dialog for adding/editing question */}
       <Dialog open={openQuestionDialog} onClose={handleCloseQuestionDialog}>
@@ -220,28 +314,14 @@ export default function QuestionsAnswersView() {
             onChange={handleQuestionInputChange}
             inputProps={{ spellCheck: 'true' }} // Enable spell check
           />
-          <Select
-            margin="dense"
-            name="level"
-            label="Level"
-            fullWidth
-            variant="outlined"
-            value={questionFormData.level}
-            onChange={handleQuestionInputChange}
-          >
-            <MenuItem value="Beginner">Beginner</MenuItem>
-            <MenuItem value="Intermediate">Intermediate</MenuItem>
-            <MenuItem value="Advanced">Advanced</MenuItem>
-            <MenuItem value="Master">Master</MenuItem>
-          </Select>
           <TextField
             margin="dense"
             name="duration"
-            label="Duration"
+            label="Duration (seconds)"
             type="text"
             fullWidth
             variant="outlined"
-            value={questionFormData.duration}
+            value={questionFormData.duration} // Pre-fill with current value
             onChange={handleQuestionInputChange}
           />
         </DialogContent>
@@ -293,6 +373,38 @@ export default function QuestionsAnswersView() {
           </Button>
           <Button onClick={handleAddOrUpdateAnswer} color="primary">
             {isAnswerEditMode ? 'Update' : 'Add'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Confirm delete question dialog */}
+      <Dialog open={confirmDeleteDialogOpen} onClose={handleCancelDelete}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          Are you sure you want to delete this question?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Confirm delete answer dialog */}
+      <Dialog open={confirmDeleteAnswerDialogOpen} onClose={handleCancelDeleteAnswer}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          Are you sure you want to delete this answer?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDeleteAnswer} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmDeleteAnswer} color="error">
+            Delete
           </Button>
         </DialogActions>
       </Dialog>

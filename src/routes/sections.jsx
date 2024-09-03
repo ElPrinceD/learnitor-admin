@@ -11,6 +11,8 @@ export const TopicsPage = lazy(() => import('src/pages/topics'));
 export const LoginPage = lazy(() => import('src/pages/login'));
 export const ProductsPage = lazy(() => import('src/pages/products'));
 export const QuestionsPage = lazy(() => import('src/pages/qna'))
+export const LevelsPage = lazy(() => import('src/pages/levels'))
+export const MaterialsPage = lazy(() => import('src/pages/material'))
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 
 // ----------------------------------------------------------------------
@@ -29,10 +31,12 @@ export default function Router() {
       ),
        children: [
         { path: 'dashboard', element: <IndexPage /> },
-        { path: '/products/:courseId/topics', element: <TopicsPage /> },
-        { path: 'products', element: <ProductsPage /> },
-        { path: '/topics/:topicId/topic-content', element: <BlogPage /> },
-        { path: '/topic-content/:topicId/questions-answers', element: <QuestionsPage />}
+        { path: '/courses/:courseTitle/:courseId/topics', element: <TopicsPage /> },
+        { path: 'courses', element: <ProductsPage /> },
+         { path: '/topics/:topicTitle/:topicId/topic-content', element: <BlogPage /> },
+        { path: '/topic-content/:topicTitle/:topicId/levels', element: <LevelsPage /> },
+        { path: '/topic-content/:topicTitle/:topicId/materials', element: <MaterialsPage /> },
+        { path: '/topic-content/:topicTitle/:topicId/levels/:level/questions-answers', element: <QuestionsPage />}
       ],
     },
     {

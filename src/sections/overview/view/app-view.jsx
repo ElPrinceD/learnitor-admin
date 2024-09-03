@@ -1,4 +1,4 @@
-import { faker } from '@faker-js/faker';
+// import { faker } from '@faker-js/faker';
 import { useState, useEffect, useContext } from 'react';
 
 import Container from '@mui/material/Container';
@@ -10,17 +10,17 @@ import AuthContext from 'src/context/auth-context';
 import { getCourses} from 'src/api-calls/course-api';
 import { getTopicCount, getQuestionCount } from 'src/api-calls/topic-api';
 
-import Iconify from 'src/components/iconify';
+// import Iconify from 'src/components/iconify';
 
-import AppTasks from '../app-tasks';
-import AppNewsUpdate from '../app-news-update';
-import AppOrderTimeline from '../app-order-timeline';
-import AppCurrentVisits from '../app-current-visits';
-import AppWebsiteVisits from '../app-website-visits';
+// import AppTasks from '../app-tasks';
+// import AppNewsUpdate from '../app-news-update';
+// import AppOrderTimeline from '../app-order-timeline';
+// import AppCurrentVisits from '../app-current-visits';
+// import AppWebsiteVisits from '../app-website-visits';
 import AppWidgetSummary from '../app-widget-summary';
-import AppTrafficBySite from '../app-traffic-by-site';
-import AppCurrentSubject from '../app-current-subject';
-import AppConversionRates from '../app-conversion-rates';
+// import AppTrafficBySite from '../app-traffic-by-site';
+// import AppCurrentSubject from '../app-current-subject';
+// import AppConversionRates from '../app-conversion-rates';
 
 
 // ----------------------------------------------------------------------
@@ -42,7 +42,6 @@ export default function AppView() {
         },
       });
         setUserCount(response.data.non_admin_count); 
-          console.log("ksjssj",response)
 
       } catch (error) {
         console.error('User count failed', error);
@@ -140,7 +139,7 @@ export default function AppView() {
           />
         </Grid>
 
-        <Grid xs={12} md={6} lg={8}>
+        {/* <Grid xs={12} md={6} lg={8}>
           <AppWebsiteVisits
             title="Website Visits"
             subheader="(+43%) than last year"
@@ -301,7 +300,7 @@ export default function AppView() {
               { id: '5', name: 'Sprint Showcase' },
             ]}
           />
-        </Grid>
+        </Grid> */}
       </Grid>
     </Container>
   );
