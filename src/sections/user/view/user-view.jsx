@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { useState, useEffect, useContext } from 'react';
 
-import  Box  from '@mui/material/Box';
+import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
@@ -25,16 +25,10 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useRouter } from 'src/routes/hooks';
 
 import AuthContext from 'src/context/auth-context';
-import {
-  addTopic,
-  updateTopic,
-  deleteTopic,
-  getTopicsForCourse,
-} from 'src/api-calls/topic-api';
+import { addTopic, updateTopic, deleteTopic, getTopicsForCourse } from 'src/api-calls/topic-api';
 
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
-
 
 export default function TopicsPage() {
   const router = useRouter();
@@ -67,10 +61,10 @@ export default function TopicsPage() {
 
     fetchTopicsData();
   }, [token, courseId]);
-  
+
   const handleTopicClick = (topicTitle, topicId) => {
-    router.push(`/topics/${topicTitle}/${topicId}/topic-content`)
-  }
+    router.push(`/topics/${topicTitle}/${topicId}/topic-content`);
+  };
   const handleDialogOpen = () => {
     setOpenDialog(true);
     setError(null);
@@ -111,21 +105,18 @@ export default function TopicsPage() {
     setTopicToDelete(null);
   };
 
- const handleAddTopic = async () => {
+  const handleAddTopic = async () => {
     try {
       const topicToAddOrUpdate = { ...newTopic, course: courseId };
       if (isEditMode && selectedTopicId) {
         const updatedTopic = await updateTopic(selectedTopicId, topicToAddOrUpdate, token);
         setTopics((prevTopics) =>
-          prevTopics.map((topic) =>
-            topic.id === selectedTopicId ? updatedTopic : topic
-          )
+          prevTopics.map((topic) => (topic.id === selectedTopicId ? updatedTopic : topic))
         );
       } else {
         const addedTopic = await addTopic(topicToAddOrUpdate, token);
         setTopics([...topics, addedTopic]);
-              console.log("bjmjmh", addedTopic)
-
+        console.log('bjmjmh', addedTopic);
       }
       handleDialogClose();
     } catch (err) {
@@ -149,35 +140,36 @@ export default function TopicsPage() {
     setRowsPerPage(parseInt(event.target.value, 10));
   };
 
- if (loading) {
-     return (
-       <Box
+  if (loading) {
+    return (
+      <Box
         sx={{
-         display: 'flex',
+          display: 'flex',
           justifyContent: 'center',
-         alignItems: 'center',
-       }}
-     >
-       <CircularProgress />
-     </Box>
-     );
-   }   if (error && !openDialog) return <div>{error}</div>;
+          alignItems: 'center',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+  if (error && !openDialog) return <div>{error}</div>;
 
   return (
     <Container>
-       <Typography
-        variant='h3'
+      <Typography
+        variant="h3"
         gutterBottom
         sx={{
           fontWeight: 'bold',
           textAlign: 'center',
-          mb: 2
+          mb: 2,
         }}
       >
         {courseTitle}
       </Typography>
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
-        <Typography variant="h4">Topics</Typography>
+        <Typography variant="h4"> Topics ({topics.length})</Typography>
         <Button
           variant="contained"
           color="inherit"
@@ -190,33 +182,44 @@ export default function TopicsPage() {
 
       <Card>
         <Scrollbar>
-             <TableContainer sx={{ overflow: 'unset' }}>
+          <TableContainer sx={{ overflow: 'unset' }}>
             <Table sx={{ minWidth: 800 }}>
               <TableBody>
-                {topics
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((topic) => (
-                    <TableRow key={topic.id} onClick={() => handleTopicClick(topic.title, topic.id)} style={{ cursor: 'pointer' }}>
-                      <TableCell component="th" scope="row">
-                        {topic.title}
-                      </TableCell>
-                      <TableCell align="left">{topic.description}</TableCell>
-                      <TableCell align="right">
-                        <Stack direction="row" spacing={1}>
-                          <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleEditTopic(topic); }}>
-                            <Iconify icon="eva:edit-outline" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={(e) => { e.stopPropagation(); handleOpenDeleteDialog(topic.id); }}
-                          >
-                            <Iconify icon="eva:trash-2-outline" />
-                          </IconButton>
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                {topics.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((topic) => (
+                  <TableRow
+                    key={topic.id}
+                    onClick={() => handleTopicClick(topic.title, topic.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <TableCell component="th" scope="row">
+                      {topic.title}
+                    </TableCell>
+                    <TableCell align="left">{topic.description}</TableCell>
+                    <TableCell align="right">
+                      <Stack direction="row" spacing={1}>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditTopic(topic);
+                          }}
+                        >
+                          <Iconify icon="eva:edit-outline" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDeleteDialog(topic.id);
+                          }}
+                        >
+                          <Iconify icon="eva:trash-2-outline" />
+                        </IconButton>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </TableContainer>
@@ -271,9 +274,7 @@ export default function TopicsPage() {
 
       <Dialog open={confirmDeleteDialogOpen} onClose={handleCancelDelete}>
         <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent>
-          Are you sure you want to delete this topic?
-        </DialogContent>
+        <DialogContent>Are you sure you want to delete this topic?</DialogContent>
         <DialogActions>
           <Button onClick={handleCancelDelete} color="primary">
             Cancel

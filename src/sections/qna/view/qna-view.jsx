@@ -147,7 +147,6 @@ export default function QuestionsAnswersView() {
             return { ...question, fetchedAnswers }; // Attach answers to the question
           })
         );
-        console.log(JSON.stringify(questionsWithAnswers, null, 2));
         setQuestions(questionsWithAnswers);
       } catch (err) {
         setError('Failed to load questions and answers');
@@ -200,22 +199,23 @@ export default function QuestionsAnswersView() {
     try {
       questionFormData.topic = topicId; // Assign topic ID
       questionFormData.level = level; // Assign level from URL
+
       let updatedQuestion;
       if (isQuestionEditMode && questionFormData.id) {
         await updateQuestion(questionFormData.id, questionFormData, token);
         updatedQuestion = questionFormData;
       } else {
-        const createdQuestion = await createQuestion(questionFormData, token);
-        updatedQuestion = createdQuestion;
+        updatedQuestion = await createQuestion(questionFormData, token);
+        updatedQuestion = { ...updatedQuestion, fetchedAnswers: [] }; // Add an empty fetchedAnswers array
       }
 
+      // Use a callback function with setQuestions to log the updated state
       setQuestions((prevQuestions) => {
-        if (isQuestionEditMode) {
-          // Update the specific question
-          return prevQuestions.map((q) => (q.id === updatedQuestion.id ? updatedQuestion : q));
-        }
-        // Add the new question
-        return [...prevQuestions, updatedQuestion];
+        const updatedQuestions = isQuestionEditMode
+          ? prevQuestions.map((q) => (q.id === updatedQuestion.id ? updatedQuestion : q))
+          : [...prevQuestions, updatedQuestion];
+
+        return updatedQuestions;
       });
 
       handleCloseQuestionDialog();
@@ -359,15 +359,6 @@ export default function QuestionsAnswersView() {
       )}
       {error && <Alert severity="error">{error}</Alert>}
 
-      <Button
-        variant="contained"
-        startIcon={<AddIcon />}
-        onClick={handleOpenQuestionDialog}
-        sx={{ marginBottom: 3 }}
-      >
-        Add Question
-      </Button>
-
       <Grid container spacing={4}>
         {questions.map((question) => (
           <Grid item xs={12} sm={6} md={4} key={question.id}>
@@ -436,7 +427,7 @@ export default function QuestionsAnswersView() {
               {/* {selectedQuestionId === question.id && (
                 <> */}
               {question.fetchedAnswers.length === 0 ? (
-                <Typography>No answers added.</Typography>
+                <Typography>No options have been added.</Typography>
               ) : (
                 <>
                   <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
@@ -480,7 +471,14 @@ export default function QuestionsAnswersView() {
           </Grid>
         ))}
       </Grid>
-
+      <Button
+        variant="contained"
+        startIcon={<AddIcon />}
+        onClick={handleOpenQuestionDialog}
+        sx={{ marginBottom: 3, marginTop: 3 }}
+      >
+        Add Question
+      </Button>
       {/* Dialog for adding or editing a question */}
       <Dialog open={openQuestionDialog} onClose={handleCloseQuestionDialog}>
         <DialogTitle>{isQuestionEditMode ? 'Edit Question' : 'Add Question'}</DialogTitle>
