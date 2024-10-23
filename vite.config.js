@@ -26,6 +26,9 @@ export default defineConfig({
       },
     ],
   },
+  build: {
+    outDir: 'build', // Change this to 'build'
+  },
   server: {
     port: 3030,
     historyApiFallback: true,
