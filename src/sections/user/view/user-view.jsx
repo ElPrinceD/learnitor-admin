@@ -108,16 +108,19 @@ export default function TopicsPage() {
   const handleAddTopic = async () => {
     try {
       const topicToAddOrUpdate = { ...newTopic, course: courseId };
+
       if (isEditMode && selectedTopicId) {
         const updatedTopic = await updateTopic(selectedTopicId, topicToAddOrUpdate, token);
+        // Update the specific topic in the list, keeping its position
         setTopics((prevTopics) =>
           prevTopics.map((topic) => (topic.id === selectedTopicId ? updatedTopic : topic))
         );
       } else {
         const addedTopic = await addTopic(topicToAddOrUpdate, token);
-        setTopics([...topics, addedTopic]);
-        console.log('bjmjmh', addedTopic);
+        // Add the new topic to the end of the list
+        setTopics((prevTopics) => [...prevTopics, addedTopic]);
       }
+
       handleDialogClose();
     } catch (err) {
       setError('Failed to save topic');
