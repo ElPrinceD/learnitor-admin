@@ -2,10 +2,12 @@ import path from 'path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import checker from 'vite-plugin-checker';
+import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 // ----------------------------------------------------------------------
 
 export default defineConfig({
+  base: '/learnitor-admin/', // Ensure GitHub Pages serves from the correct subdirectory
   plugins: [
     react(),
     checker({
@@ -13,6 +15,15 @@ export default defineConfig({
         lintCommand: 'eslint "./src/**/*.{js,jsx,ts,tsx}"',
       },
     }),
+    // viteStaticCopy({
+    //   targets: [
+    //     {
+    //       src: 'build/index.html',
+    //       dest: '',
+    //       rename: '404.html',  // Copy index.html as 404.html
+    //     },
+    //   ],
+    // }),
   ],
   resolve: {
     alias: [
@@ -27,7 +38,7 @@ export default defineConfig({
     ],
   },
   build: {
-    outDir: 'build', // Change this to 'build'
+    outDir: 'build', // Ensure this matches the deployment command or adjust the script to `gh-pages -d build`
   },
   server: {
     port: 3030,

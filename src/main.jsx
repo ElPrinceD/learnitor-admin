@@ -17,5 +17,4 @@ root.render(
       </Suspense>
     </BrowserRouter>
   </HelmetProvider>
-
 );

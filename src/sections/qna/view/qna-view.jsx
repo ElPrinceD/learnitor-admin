@@ -171,10 +171,18 @@ export default function QuestionsAnswersView() {
     setSelectedQuestionId(null);
   };
 
-  const handleOpenAnswerDialog = (questionId) => {
+  const handleOpenAnswerDialog = async (questionId) => {
     setSelectedQuestionId(questionId);
-    setOpenAnswerDialog(true);
     setError(null);
+    setOpenAnswerDialog(true); // Open the dialog before loading answers
+
+    // Fetch the answers for the current question to ensure the answers are up-to-date
+    try {
+      const data = await getAnswersByQuestion(questionId, token);
+      setAnswers(data);
+    } catch (err) {
+      setError('Failed to load answers');
+    }
   };
 
   const handleCloseAnswerDialog = () => {
@@ -197,21 +205,16 @@ export default function QuestionsAnswersView() {
     try {
       questionFormData.topic = topicId; // Assign topic ID
       questionFormData.level = level; // Assign level from URL
-
       if (isQuestionEditMode && questionFormData.id) {
         await updateQuestion(questionFormData.id, questionFormData, token);
-        // Update the specific question in the list, keeping the position
-        setQuestions((prevQuestions) =>
-          prevQuestions.map((question) =>
-            question.id === questionFormData.id ? questionFormData : question
-          )
-        );
       } else {
-        const newQuestion = await createQuestion(questionFormData, token);
-        // Add the new question to the list
-        setQuestions((prevQuestions) => [...prevQuestions, newQuestion]);
+        await createQuestion(questionFormData, token);
       }
       handleCloseQuestionDialog();
+      // Update the list of questions after creation or update
+      const updatedQuestions = await getQuestionsByTopic(topicId, token);
+      const filteredQuestions = updatedQuestions.filter((q) => q.level === level);
+      setQuestions(filteredQuestions);
     } catch (err) {
       setError('Failed to save question');
     }
@@ -221,17 +224,14 @@ export default function QuestionsAnswersView() {
     try {
       answerFormData.question = selectedQuestionId; // Assign question ID
       if (isAnswerEditMode && answerFormData.id) {
-        await updateAnswer(answerFormData.id, answerFormData, token);
-        // Update the specific answer in the list, keeping the position
-        setAnswers((prevAnswers) =>
-          prevAnswers.map((answer) => (answer.id === answerFormData.id ? answerFormData : answer))
-        );
+        await updateAnswer(answerFormData.id, answerFormData, token); // Use the correct answer ID
       } else {
-        const newAnswer = await createAnswer(answerFormData, token);
-        // Add the new answer to the list
-        setAnswers((prevAnswers) => [...prevAnswers, newAnswer]);
+        await createAnswer(answerFormData, token);
       }
       handleCloseAnswerDialog();
+      // Refresh answers list after addition or update
+      const updatedAnswers = await getAnswersByQuestion(selectedQuestionId, token);
+      setAnswers(updatedAnswers);
     } catch (err) {
       setError('Failed to save answer');
     }
@@ -451,6 +451,7 @@ export default function QuestionsAnswersView() {
             label="Question Text"
             type="text"
             fullWidth
+            multiline
             variant="outlined"
             value={questionFormData.text}
             onChange={handleQuestionInputChange}
@@ -460,7 +461,7 @@ export default function QuestionsAnswersView() {
             margin="dense"
             name="duration"
             label="Duration (seconds)"
-            type="number"
+            type="text"
             fullWidth
             variant="outlined"
             value={questionFormData.duration} // Pre-fill with current value
@@ -489,6 +490,7 @@ export default function QuestionsAnswersView() {
             label="Answer Text"
             type="text"
             fullWidth
+            multiline
             variant="outlined"
             value={answerFormData.text}
             onChange={handleAnswerInputChange}
@@ -536,7 +538,7 @@ export default function QuestionsAnswersView() {
       {/* Confirm delete answer dialog */}
       <Dialog open={confirmDeleteAnswerDialogOpen} onClose={handleCancelDeleteAnswer}>
         <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent>Are you sure you want to delete this answer?</DialogContent>
+        <DialogContent>Are you sure you want to delete this option?</DialogContent>
         <DialogActions>
           <Button onClick={handleCancelDeleteAnswer} color="primary">
             Cancel
